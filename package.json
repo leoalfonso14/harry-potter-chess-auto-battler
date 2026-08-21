@@ -1,0 +1,19 @@
+{
+  "name": "auto-battler-monorepo",
+  "version": "1.0.0",
+  "private": true,
+  "workspaces": [
+    "packages/*"
+  ],
+  "scripts": {
+    "build": "npm run --workspaces build",
+    "test": "npm run --workspaces test",
+    "dev:server": "npm run --workspace=packages/server dev",
+    "dev:client": "npm run --workspace=packages/client dev",
+    "dev": "concurrently \"npm run dev:server\" \"npm run dev:client\""
+  },
+  "devDependencies": {
+    "concurrently": "^10.0.5",
+    "typescript": "^5.7.0"
+  }
+}
