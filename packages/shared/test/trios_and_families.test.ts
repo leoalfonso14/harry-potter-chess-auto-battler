@@ -2,18 +2,28 @@ import { describe, it } from 'node:test';
 import assert from 'node:assert';
 import { calculateSynergies } from '../src/engine/synergy-calculator.js';
 import { CombatSimulator } from '../src/engine/combat-simulator.js';
-import { BoardUnit } from '../types/unit.js';
+import { BoardUnit } from '../src/types/unit.js';
 import { TRAITS } from '../src/data/synergies.js';
 
-describe('New Origins: Golden Trio, Slytherin Trio, Weasley Family, Malfoy Family', () => {
+describe('Origins & Families: Golden Trio, Inquisitorial Squad, Weasley, Malfoy, Patil', () => {
   it('should verify trait definitions and breakpoints exist', () => {
     assert.ok(TRAITS['Golden Trio']);
     assert.strictEqual(TRAITS['Golden Trio'].breakpoints.length, 1);
     assert.strictEqual(TRAITS['Golden Trio'].breakpoints[0].count, 3);
 
-    assert.ok(TRAITS['Slytherin Trio']);
-    assert.strictEqual(TRAITS['Slytherin Trio'].breakpoints.length, 1);
-    assert.strictEqual(TRAITS['Slytherin Trio'].breakpoints[0].count, 3);
+    assert.ok(TRAITS['Inquisitorial Squad']);
+    assert.strictEqual(TRAITS['Inquisitorial Squad'].breakpoints.length, 2);
+    assert.strictEqual(TRAITS['Inquisitorial Squad'].breakpoints[0].count, 3);
+    assert.strictEqual(TRAITS['Inquisitorial Squad'].breakpoints[1].count, 5);
+
+    // 🏰 Hogwarts Houses (3 - 5 - 8)
+    for (const house of ['Gryffindor', 'Slytherin', 'Ravenclaw', 'Hufflepuff']) {
+      assert.ok(TRAITS[house]);
+      assert.strictEqual(TRAITS[house].breakpoints.length, 3);
+      assert.strictEqual(TRAITS[house].breakpoints[0].count, 3);
+      assert.strictEqual(TRAITS[house].breakpoints[1].count, 5);
+      assert.strictEqual(TRAITS[house].breakpoints[2].count, 8);
+    }
 
     assert.ok(TRAITS['Weasley']);
     assert.strictEqual(TRAITS['Weasley'].breakpoints.length, 2);
@@ -24,6 +34,32 @@ describe('New Origins: Golden Trio, Slytherin Trio, Weasley Family, Malfoy Famil
     assert.strictEqual(TRAITS['Malfoy'].breakpoints.length, 2);
     assert.strictEqual(TRAITS['Malfoy'].breakpoints[0].count, 2);
     assert.strictEqual(TRAITS['Malfoy'].breakpoints[1].count, 3);
+
+    assert.ok(TRAITS['Patil Sisters']);
+    assert.strictEqual(TRAITS['Patil Sisters'].breakpoints.length, 1);
+    assert.strictEqual(TRAITS['Patil Sisters'].breakpoints[0].count, 2);
+
+    assert.ok(TRAITS['Sniper']);
+    assert.strictEqual(TRAITS['Sniper'].breakpoints.length, 3);
+    assert.strictEqual(TRAITS['Sniper'].breakpoints[0].count, 2);
+    assert.strictEqual(TRAITS['Sniper'].breakpoints[1].count, 3);
+    assert.strictEqual(TRAITS['Sniper'].breakpoints[2].count, 4);
+  });
+
+  it('should activate Patil Sisters synergy when Padma and Parvati Patil are on board', () => {
+    const board: (BoardUnit | null)[][] = Array(4)
+      .fill(null)
+      .map(() => Array(8).fill(null));
+
+    board[0][0] = { id: 'u1', unitId: 'padma_patil', starLevel: 1, position: { x: 0, y: 0 }, items: [], currentHp: 640, maxHp: 640, currentMana: 20, maxMana: 70 };
+    board[0][1] = { id: 'u2', unitId: 'parvati_patil', starLevel: 1, position: { x: 1, y: 0 }, items: [], currentHp: 620, maxHp: 620, currentMana: 20, maxMana: 70 };
+
+    const activeTraits = calculateSynergies(board);
+    const patilTrait = activeTraits.find((t) => t.traitId === 'Patil Sisters');
+
+    assert.ok(patilTrait);
+    assert.strictEqual(patilTrait.count, 2);
+    assert.strictEqual(patilTrait.activeTier, 1);
   });
 
   it('should activate Golden Trio synergy when Harry, Hermione, and Ron are on board', () => {
@@ -43,21 +79,32 @@ describe('New Origins: Golden Trio, Slytherin Trio, Weasley Family, Malfoy Famil
     assert.strictEqual(goldenTrio.activeTier, 1);
   });
 
-  it('should activate Slytherin Trio synergy when Draco, Crabbe, and Goyle are on board', () => {
+  it('should activate Inquisitorial Squad synergy tier 1 (3 units) and tier 2 (5 units)', () => {
     const board: (BoardUnit | null)[][] = Array(4)
       .fill(null)
       .map(() => Array(8).fill(null));
 
-    board[0][0] = { id: 'u1', unitId: 'draco_malfoy', starLevel: 1, position: { x: 0, y: 0 }, items: [], currentHp: 520, maxHp: 520, currentMana: 10, maxMana: 60 };
-    board[0][1] = { id: 'u2', unitId: 'vincent_crabbe', starLevel: 1, position: { x: 1, y: 0 }, items: [], currentHp: 720, maxHp: 720, currentMana: 0, maxMana: 80 };
-    board[0][2] = { id: 'u3', unitId: 'gregory_goyle', starLevel: 1, position: { x: 2, y: 0 }, items: [], currentHp: 700, maxHp: 700, currentMana: 0, maxMana: 80 };
+    board[0][0] = { id: 'u1', unitId: 'vincent_crabbe', starLevel: 1, position: { x: 0, y: 0 }, items: [], currentHp: 720, maxHp: 720, currentMana: 0, maxMana: 80 };
+    board[0][1] = { id: 'u2', unitId: 'gregory_goyle', starLevel: 1, position: { x: 1, y: 0 }, items: [], currentHp: 800, maxHp: 800, currentMana: 0, maxMana: 80 };
+    board[0][2] = { id: 'u3', unitId: 'argus_filch', starLevel: 1, position: { x: 2, y: 0 }, items: [], currentHp: 580, maxHp: 580, currentMana: 0, maxMana: 80 };
 
-    const activeTraits = calculateSynergies(board);
-    const slytherinTrio = activeTraits.find((t) => t.traitId === 'Slytherin Trio');
+    let activeTraits = calculateSynergies(board);
+    let inqSquad = activeTraits.find((t) => t.traitId === 'Inquisitorial Squad');
 
-    assert.ok(slytherinTrio);
-    assert.strictEqual(slytherinTrio.count, 3);
-    assert.strictEqual(slytherinTrio.activeTier, 1);
+    assert.ok(inqSquad);
+    assert.strictEqual(inqSquad.count, 3);
+    assert.strictEqual(inqSquad.activeTier, 1);
+
+    // Add Draco Malfoy and Pansy Parkinson for tier 2 (5 units)
+    board[0][3] = { id: 'u4', unitId: 'draco_malfoy', starLevel: 1, position: { x: 3, y: 0 }, items: [], currentHp: 780, maxHp: 780, currentMana: 15, maxMana: 65 };
+    board[0][4] = { id: 'u5', unitId: 'pansy_parkinson', starLevel: 1, position: { x: 4, y: 0 }, items: [], currentHp: 640, maxHp: 640, currentMana: 10, maxMana: 65 };
+
+    activeTraits = calculateSynergies(board);
+    inqSquad = activeTraits.find((t) => t.traitId === 'Inquisitorial Squad');
+
+    assert.ok(inqSquad);
+    assert.strictEqual(inqSquad.count, 5);
+    assert.strictEqual(inqSquad.activeTier, 2);
   });
 
   it('should calculate Weasley family tier 1 and tier 2 breakpoints', () => {
@@ -90,7 +137,7 @@ describe('New Origins: Golden Trio, Slytherin Trio, Weasley Family, Malfoy Famil
       .fill(null)
       .map(() => Array(8).fill(null));
 
-    board[0][0] = { id: 'u1', unitId: 'draco_malfoy', starLevel: 1, position: { x: 0, y: 0 }, items: [], currentHp: 520, maxHp: 520, currentMana: 10, maxMana: 60 };
+    board[0][0] = { id: 'u1', unitId: 'draco_malfoy', starLevel: 1, position: { x: 0, y: 0 }, items: [], currentHp: 780, maxHp: 780, currentMana: 15, maxMana: 65 };
     board[0][1] = { id: 'u2', unitId: 'lucius_malfoy', starLevel: 1, position: { x: 1, y: 0 }, items: [], currentHp: 1200, maxHp: 1200, currentMana: 20, maxMana: 75 };
 
     let activeTraits = calculateSynergies(board);
@@ -109,54 +156,69 @@ describe('New Origins: Golden Trio, Slytherin Trio, Weasley Family, Malfoy Famil
     assert.strictEqual(malfoyTrait.activeTier, 2);
   });
 
-  it('should apply Malfoy start of combat bribes (smSunder & smShred) to enemies in combat simulator', () => {
+  it('should apply Inquisitorial Squad start-of-combat detention to highest-threat enemies', () => {
     const homeUnits: BoardUnit[] = [
-      { id: 'h1', unitId: 'draco_malfoy', starLevel: 1, position: { x: 0, y: 0 }, items: [], currentHp: 520, maxHp: 520, currentMana: 10, maxMana: 60 },
-      { id: 'h2', unitId: 'lucius_malfoy', starLevel: 1, position: { x: 1, y: 0 }, items: [], currentHp: 1200, maxHp: 1200, currentMana: 20, maxMana: 75 },
+      { id: 'h1', unitId: 'vincent_crabbe', starLevel: 1, position: { x: 0, y: 0 }, items: [], currentHp: 720, maxHp: 720, currentMana: 0, maxMana: 80 },
+      { id: 'h2', unitId: 'gregory_goyle', starLevel: 1, position: { x: 1, y: 0 }, items: [], currentHp: 800, maxHp: 800, currentMana: 0, maxMana: 80 },
+      { id: 'h3', unitId: 'argus_filch', starLevel: 1, position: { x: 2, y: 0 }, items: [], currentHp: 580, maxHp: 580, currentMana: 0, maxMana: 80 },
     ];
 
     const awayUnits: BoardUnit[] = [
-      { id: 'a1', unitId: 'neville_longbottom', starLevel: 1, position: { x: 0, y: 0 }, items: [], currentHp: 650, maxHp: 650, currentMana: 0, maxMana: 70 },
+      { id: 'a1', unitId: 'harry_potter', starLevel: 1, position: { x: 0, y: 3 }, items: [], currentHp: 780, maxHp: 780, currentMana: 25, maxMana: 75 },
     ];
 
-    const malfoyTraitInfo = {
-      traitId: 'Malfoy',
-      name: 'Malfoy',
+    const inqTraitInfo = {
+      traitId: 'Inquisitorial Squad',
+      name: 'Inquisitorial Squad',
       type: 'origin' as const,
-      count: 2,
+      count: 3,
       activeTier: 1,
       totalTiers: 2,
       currentBreakpointDescription: '',
       nextBreakpointCount: null,
     };
 
-    const sim = new CombatSimulator('homePlayer', 'awayPlayer', homeUnits, awayUnits, [malfoyTraitInfo], [], 2);
+    const sim = new CombatSimulator('homePlayer', 'awayPlayer', homeUnits, awayUnits, [inqTraitInfo], [], 2);
     const result = sim.simulate();
 
     assert.ok(result.events.length > 0);
   });
 
-  it('should disable both Golden Trio and Slytherin Trio if all 6 units are fielded together', () => {
+  it('should calculate Gryffindor House breakpoints at 3, 5, and 8 units', () => {
     const board: (BoardUnit | null)[][] = Array(4)
       .fill(null)
       .map(() => Array(8).fill(null));
 
-    // Field all 3 Golden Trio
-    board[0][0] = { id: 'u1', unitId: 'harry_potter', starLevel: 1, position: { x: 0, y: 0 }, items: [], currentHp: 620, maxHp: 620, currentMana: 20, maxMana: 70 };
-    board[0][1] = { id: 'u2', unitId: 'hermione_granger', starLevel: 1, position: { x: 1, y: 0 }, items: [], currentHp: 540, maxHp: 540, currentMana: 30, maxMana: 80 };
+    // Tier 1 (3 units): Neville, Colin, Ron
+    board[0][0] = { id: 'u1', unitId: 'neville_longbottom', starLevel: 1, position: { x: 0, y: 0 }, items: [], currentHp: 650, maxHp: 650, currentMana: 0, maxMana: 70 };
+    board[0][1] = { id: 'u2', unitId: 'colin_creevey', starLevel: 1, position: { x: 1, y: 0 }, items: [], currentHp: 500, maxHp: 500, currentMana: 10, maxMana: 60 };
     board[0][2] = { id: 'u3', unitId: 'ron_weasley', starLevel: 1, position: { x: 2, y: 0 }, items: [], currentHp: 750, maxHp: 750, currentMana: 20, maxMana: 80 };
 
-    // Field all 3 Slytherin Trio
-    board[1][0] = { id: 'u4', unitId: 'draco_malfoy', starLevel: 1, position: { x: 0, y: 1 }, items: [], currentHp: 520, maxHp: 520, currentMana: 10, maxMana: 60 };
-    board[1][1] = { id: 'u5', unitId: 'vincent_crabbe', starLevel: 1, position: { x: 1, y: 1 }, items: [], currentHp: 720, maxHp: 720, currentMana: 0, maxMana: 80 };
-    board[1][2] = { id: 'u6', unitId: 'gregory_goyle', starLevel: 1, position: { x: 2, y: 1 }, items: [], currentHp: 700, maxHp: 700, currentMana: 0, maxMana: 80 };
+    let activeTraits = calculateSynergies(board);
+    let gryff = activeTraits.find((t) => t.traitId === 'Gryffindor');
+    assert.ok(gryff);
+    assert.strictEqual(gryff.count, 3);
+    assert.strictEqual(gryff.activeTier, 1);
 
-    const activeTraits = calculateSynergies(board);
-    const goldenTrio = activeTraits.find((t) => t.traitId === 'Golden Trio');
-    const slytherinTrio = activeTraits.find((t) => t.traitId === 'Slytherin Trio');
+    // Tier 2 (5 units): Add Hermione, Ginny
+    board[0][3] = { id: 'u4', unitId: 'hermione_granger', starLevel: 1, position: { x: 3, y: 0 }, items: [], currentHp: 640, maxHp: 640, currentMana: 20, maxMana: 75 };
+    board[0][4] = { id: 'u5', unitId: 'ginny_weasley', starLevel: 1, position: { x: 4, y: 0 }, items: [], currentHp: 640, maxHp: 640, currentMana: 0, maxMana: 60 };
 
-    // Both must be deactivated (activeTier 0)
-    assert.strictEqual(goldenTrio?.activeTier || 0, 0);
-    assert.strictEqual(slytherinTrio?.activeTier || 0, 0);
+    activeTraits = calculateSynergies(board);
+    gryff = activeTraits.find((t) => t.traitId === 'Gryffindor');
+    assert.ok(gryff);
+    assert.strictEqual(gryff.count, 5);
+    assert.strictEqual(gryff.activeTier, 2);
+
+    // Tier 3 (8 units): Add Harry, Dean, Fred & George
+    board[0][5] = { id: 'u6', unitId: 'harry_potter', starLevel: 1, position: { x: 5, y: 0 }, items: [], currentHp: 780, maxHp: 780, currentMana: 25, maxMana: 75 };
+    board[0][6] = { id: 'u7', unitId: 'dean_thomas', starLevel: 1, position: { x: 6, y: 0 }, items: [], currentHp: 640, maxHp: 640, currentMana: 0, maxMana: 70 };
+    board[0][7] = { id: 'u8', unitId: 'fred_and_george', starLevel: 1, position: { x: 7, y: 0 }, items: [], currentHp: 780, maxHp: 780, currentMana: 10, maxMana: 60 };
+
+    activeTraits = calculateSynergies(board);
+    gryff = activeTraits.find((t) => t.traitId === 'Gryffindor');
+    assert.ok(gryff);
+    assert.strictEqual(gryff.count, 8);
+    assert.strictEqual(gryff.activeTier, 3);
   });
 });

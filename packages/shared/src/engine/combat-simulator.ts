@@ -15,7 +15,9 @@ import { ActiveTraitInfo } from '../types/synergy.js';
 import { getHexDistance, getHexNeighbors } from '../utils/hex.js';
 
 export const TICK_RATE = 20; // 20 ticks per second (50ms per tick)
-export const MAX_COMBAT_TICKS = 30 * TICK_RATE; // 30 seconds = 600 ticks
+export const REGULAR_COMBAT_TICKS = 25 * TICK_RATE; // 25 seconds = 500 ticks (shortened by 5s)
+export const OVERTIME_TICKS = 20 * TICK_RATE; // 20 seconds = 400 ticks (sudden death)
+export const MAX_COMBAT_TICKS = REGULAR_COMBAT_TICKS + OVERTIME_TICKS; // 45 seconds = 900 ticks total
 
 export class CombatSimulator {
   private homePlayerId: string;
@@ -24,6 +26,7 @@ export class CombatSimulator {
   private units: CombatUnit[] = [];
   private events: CombatEvent[] = [];
   private currentTick = 0;
+  private inOvertime = false;
   private homeTraits: ActiveTraitInfo[] = [];
   private awayTraits: ActiveTraitInfo[] = [];
 
@@ -69,6 +72,7 @@ export class CombatSimulator {
       let abilityPower = 1.0;
       let critChance = 0.15;
       let critMultiplier = 1.5;
+      let dodgeChance = 0.0;
       
       // Role-based baseline mana per second
       // Casters possess baseline passive mana regeneration (+3 mana/sec)
@@ -116,9 +120,8 @@ export class CombatSimulator {
           if (bp.bonus.critDamage) critMultiplier += bp.bonus.critDamage;
           if (bp.bonus.startingMana) startingMana += bp.bonus.startingMana;
           if (bp.bonus.manaStartBonus) startingMana += bp.bonus.manaStartBonus;
-          if (t.traitId === 'Sniper') {
-            range += t.activeTier >= 2 ? 2 : 1;
-          }
+          if (bp.bonus.manaPerSecond) manaPerSec += bp.bonus.manaPerSecond;
+          if (bp.bonus.dodgeChance) dodgeChance += bp.bonus.dodgeChance;
         }
       }
 
@@ -149,14 +152,22 @@ export class CombatSimulator {
         abilityPower,
         critChance,
         critMultiplier,
+        dodgeChance,
+        duelistStacks: 0,
+        hasGryffindorShielded: false,
+        hasWeasleyShielded: false,
         state: 'IDLE',
         targetId: null,
         attackCooldown: Math.floor(Math.random() * 5), // staggered start
+        moveCooldown: 0,
         castDuration: 0,
         items: [...bu.items],
         totalDamageDealt: 0,
         totalDamageTaken: 0,
+        totalPhysicalMitigated: 0,
+        totalMagicMitigated: 0,
         totalHealing: 0,
+        totalShielding: 0,
         shield: 0,
         manaPerSec,
         statusEffects: [],
@@ -193,22 +204,71 @@ export class CombatSimulator {
       });
     }
 
-    // Malfoy (2+) Bribe: Inflicts all enemy units with smSunder & smShred for 8s at combat start
-    if (this.homeTraits.some((t) => t.traitId === 'Malfoy' && t.activeTier >= 1)) {
-      for (const u of this.units.filter((u) => u.team === 'away')) {
-        this.applyStatusEffect(u, 'smSunder', 8, 0.20);
-        this.applyStatusEffect(u, 'smShred', 8, 0.20);
+    // Malfoy (2+) Bribe: Inflicts all enemy units with smSunder & smShred for duration at combat start
+    const applyMalfoyBribe = (teamTraits: ActiveTraitInfo[], opposingTeam: 'home' | 'away') => {
+      const malfoyTrait = teamTraits.find((t) => t.traitId === 'Malfoy' && t.activeTier >= 1);
+      if (malfoyTrait) {
+        const bp = TRAITS['Malfoy']?.breakpoints[malfoyTrait.activeTier - 1];
+        const sunderVal = bp?.bonus.sunderShredPercent ?? 0.12;
+        const duration = bp?.bonus.sunderShredDuration ?? 6.0;
+        for (const u of this.units.filter((u) => u.team === opposingTeam)) {
+          this.applyStatusEffect(u, 'smSunder', duration, sunderVal);
+          this.applyStatusEffect(u, 'smShred', duration, sunderVal);
+        }
       }
+    };
+    applyMalfoyBribe(this.homeTraits, 'away');
+    applyMalfoyBribe(this.awayTraits, 'home');
+
+    // Inquisitorial Squad (3/5) Detention: Detains (stuns & disarms) highest-damage enemies at combat start
+    const applyInquisitorialDetention = (traitTier: number, opposingTeam: 'home' | 'away') => {
+      const bp = TRAITS['Inquisitorial Squad']?.breakpoints[traitTier - 1];
+      const countToDetain = bp?.bonus.detainCount ?? (traitTier >= 2 ? 2 : 1);
+      const duration = bp?.bonus.detainDuration ?? 2.8;
+      if (countToDetain > 0) {
+        const opposingUnits = this.units
+          .filter((u) => u.team === opposingTeam && u.state !== 'DEAD')
+          .sort((a, b) => (b.attackDamage + b.abilityPower * 100) - (a.attackDamage + a.abilityPower * 100))
+          .slice(0, countToDetain);
+        for (const target of opposingUnits) {
+          this.applyStatusEffect(target, 'stunned', duration);
+          this.applyStatusEffect(target, 'disarmed', duration);
+        }
+      }
+    };
+
+    const homeInquisitorial = this.homeTraits.find((t) => t.traitId === 'Inquisitorial Squad' && t.activeTier >= 1);
+    if (homeInquisitorial) {
+      applyInquisitorialDetention(homeInquisitorial.activeTier, 'away');
     }
-    if (this.awayTraits.some((t) => t.traitId === 'Malfoy' && t.activeTier >= 1)) {
-      for (const u of this.units.filter((u) => u.team === 'home')) {
-        this.applyStatusEffect(u, 'smSunder', 8, 0.20);
-        this.applyStatusEffect(u, 'smShred', 8, 0.20);
-      }
+    const awayInquisitorial = this.awayTraits.find((t) => t.traitId === 'Inquisitorial Squad' && t.activeTier >= 1);
+    if (awayInquisitorial) {
+      applyInquisitorialDetention(awayInquisitorial.activeTier, 'home');
     }
 
     while (this.currentTick < MAX_COMBAT_TICKS) {
       this.currentTick++;
+
+      // Sudden Death / Overtime at 25 seconds (tick 500)
+      if (this.currentTick === REGULAR_COMBAT_TICKS && !this.inOvertime) {
+        this.inOvertime = true;
+        for (const u of this.units) {
+          if (u.state !== 'DEAD') {
+            u.attackSpeed *= 1.5;
+            u.abilityPower *= 1.5;
+            u.attackCooldown = Math.min(
+              u.attackCooldown,
+              Math.max(4, Math.round(TICK_RATE / Math.max(0.2, u.attackSpeed)))
+            );
+          }
+        }
+        this.events.push({
+          tick: this.currentTick,
+          type: 'OVERTIME',
+          value: 20,
+          meta: { attackSpeedMultiplier: 1.5, damageMultiplier: 1.5 },
+        });
+      }
 
       const homeAlive = this.units.filter((u) => u.team === 'home' && u.state !== 'DEAD');
       const awayAlive = this.units.filter((u) => u.team === 'away' && u.state !== 'DEAD');
@@ -257,9 +317,12 @@ export class CombatSimulator {
         continue;
       }
 
-      // Decrement attack cooldown
+      // Decrement attack and move cooldowns
       if (unit.attackCooldown > 0) {
         unit.attackCooldown--;
+      }
+      if (unit.moveCooldown > 0) {
+        unit.moveCooldown--;
       }
 
       // Periodic item passives (every 1 second = 20 ticks)
@@ -267,8 +330,19 @@ export class CombatSimulator {
         this.processItemTick(unit);
       }
 
-      // Mana check: Cast ability when at 100% mana
-      if (unit.currentMana >= unit.maxMana && unit.state === 'IDLE') {
+      const isStunned = unit.statusEffects?.some((e) => e.type === 'stun' || e.type === 'stunned');
+      if (isStunned) {
+        unit.state = 'STUNNED';
+        continue;
+      } else if (unit.state === 'STUNNED') {
+        unit.state = 'IDLE';
+      }
+
+      const isSilenced = unit.statusEffects?.some((e) => e.type === 'silence' || e.type === 'silenced');
+      const isDisarmed = unit.statusEffects?.some((e) => e.type === 'disarm' || e.type === 'disarmed');
+
+      // Mana check: Cast ability when at 100% mana (if not silenced)
+      if (unit.currentMana >= unit.maxMana && unit.state === 'IDLE' && !isSilenced) {
         unit.state = 'CASTING';
         unit.castDuration = Math.round(0.4 * TICK_RATE); // 0.4s cast time (8 ticks)
         unit.currentMana = 0;
@@ -300,17 +374,32 @@ export class CombatSimulator {
 
       if (!target) continue;
 
-      const dist = getHexDistance(unit.position, target.position);
+      let dist = getHexDistance(unit.position, target.position);
+
+      // If current target is outside attack range, check if any living enemy is already in range to avoid walking past
+      if (dist > unit.range) {
+        const inRangeEnemy = this.units.find(
+          (u) =>
+            u.team !== unit.team &&
+            u.state !== 'DEAD' &&
+            getHexDistance(unit.position, u.position) <= unit.range
+        );
+        if (inRangeEnemy) {
+          target = inRangeEnemy;
+          unit.targetId = inRangeEnemy.id;
+          dist = getHexDistance(unit.position, target.position);
+        }
+      }
 
       if (dist <= unit.range) {
-        // In range: Attack target
-        if (unit.attackCooldown <= 0 && unit.state === 'IDLE') {
+        // In range: Attack target (if not disarmed)
+        if (unit.attackCooldown <= 0 && unit.state === 'IDLE' && !isDisarmed) {
           this.executeBasicAttack(unit, target);
         }
       } else {
-        // Out of range: Move towards target
-        if (unit.state === 'IDLE') {
-          this.moveUnitTowards(unit, target.position);
+        // Out of range: Move towards target with tactical move cooldown
+        if (unit.state === 'IDLE' && unit.moveCooldown <= 0) {
+          this.moveUnitTowards(unit, target);
         }
       }
     }
@@ -341,20 +430,67 @@ export class CombatSimulator {
         }
       }
     }
+
+    // 3. Hufflepuff (8) Teamwide HP Regeneration
+    const unitTeamTraits = unit.team === 'home' ? this.homeTraits : this.awayTraits;
+    const huffTrait = unitTeamTraits.find((t) => t.traitId === 'Hufflepuff' && t.activeTier >= 3);
+    if (huffTrait) {
+      const bp = TRAITS['Hufflepuff']?.breakpoints[huffTrait.activeTier - 1];
+      if (bp?.bonus.hpRegenPerSec && unit.currentHp < unit.maxHp) {
+        const healAmt = Math.round(unit.maxHp * bp.bonus.hpRegenPerSec);
+        unit.currentHp = Math.min(unit.maxHp, unit.currentHp + healAmt);
+        unit.totalHealing += healAmt;
+        this.events.push({
+          tick: this.currentTick,
+          type: 'HEAL',
+          sourceId: unit.id,
+          targetId: unit.id,
+          value: healAmt,
+          remainingHp: unit.currentHp,
+        });
+      }
+    }
   }
 
   private executeBasicAttack(attacker: CombatUnit, target: CombatUnit): void {
     const attackerDef = UNITS[attacker.unitDefId];
+    const targetDef = UNITS[target.unitDefId];
+    const attackerTeamTraits = attacker.team === 'home' ? this.homeTraits : this.awayTraits;
+    const targetTeamTraits = target.team === 'home' ? this.homeTraits : this.awayTraits;
+
+    // Check Dodge
+    if (target.dodgeChance && Math.random() < target.dodgeChance) {
+      // Trickster Mana Burn on dodge
+      if (targetDef?.classes.includes('Trickster')) {
+        const tricksterTrait = targetTeamTraits.find((t) => t.traitId === 'Trickster' && t.activeTier >= 1);
+        if (tricksterTrait) {
+          const bp = TRAITS['Trickster']?.breakpoints[tricksterTrait.activeTier - 1];
+          const burn = bp?.bonus.manaBurn ?? 6;
+          attacker.currentMana = Math.max(0, attacker.currentMana - burn);
+        }
+      }
+
+      // Reset attack cooldown and return
+      const cooldownTicks = Math.max(4, Math.round(TICK_RATE / Math.max(0.2, attacker.attackSpeed)));
+      attacker.attackCooldown = cooldownTicks;
+      return;
+    }
+
     const isCrit = Math.random() < attacker.critChance;
     let rawDmg = isCrit
       ? attacker.attackDamage * attacker.critMultiplier
       : attacker.attackDamage;
 
-    // Sniper class damage amplification: +3% damage amp per hex tile
+    // Sniper class damage amplification per hex tile
     if (attackerDef?.classes.includes('Sniper')) {
-      const hexDist = getHexDistance(attacker.position, target.position);
-      const ampMultiplier = 1 + hexDist * 0.03;
-      rawDmg *= ampMultiplier;
+      const sniperTrait = attackerTeamTraits.find((t) => t.traitId === 'Sniper' && t.activeTier >= 1);
+      if (sniperTrait) {
+        const bp = TRAITS['Sniper']?.breakpoints[sniperTrait.activeTier - 1];
+        const ampPerHex = bp?.bonus.damageAmpPerHex ?? 0.02;
+        const hexDist = getHexDistance(attacker.position, target.position);
+        const ampMultiplier = 1 + hexDist * ampPerHex;
+        rawDmg *= ampMultiplier;
+      }
     }
 
     // Armor damage reduction formula: Damage * 100 / (100 + Armor)
@@ -384,8 +520,50 @@ export class CombatSimulator {
     }
     attacker.currentMana = Math.min(attacker.maxMana, attacker.currentMana + manaGain);
 
+    // Duelist class stacking attack speed with max stacks
+    if (attackerDef?.classes.includes('Duelist')) {
+      const duelistTrait = attackerTeamTraits.find((t) => t.traitId === 'Duelist' && t.activeTier >= 1);
+      if (duelistTrait) {
+        const bp = TRAITS['Duelist']?.breakpoints[duelistTrait.activeTier - 1];
+        const asPerStack = bp?.bonus.attackSpeedPerStack ?? (duelistTrait.activeTier >= 2 ? 0.12 : 0.06);
+        const maxStacks = bp?.bonus.maxStacks ?? 8;
+        attacker.duelistStacks = attacker.duelistStacks ?? 0;
+        if (attacker.duelistStacks < maxStacks) {
+          attacker.duelistStacks += 1;
+          attacker.attackSpeed *= (1 + asPerStack);
+        }
+      }
+    }
+
     // Apply damage
     this.applyDamage(attacker, target, finalDamage, 'physical', isCrit);
+
+    // Dragon origin: cleaves adjacent foes with splash damage
+    const dragonTrait = attackerTeamTraits.find((t) => t.traitId === 'Dragon' && t.activeTier >= 1);
+    if (dragonTrait && attackerDef?.origins.includes('Dragon')) {
+      const bp = TRAITS['Dragon']?.breakpoints[0];
+      const splashPct = bp?.bonus.splashPercent ?? 0.15;
+      const splashDmg = Math.max(1, Math.round(finalDamage * splashPct));
+      const adjEnemies = this.units.filter(
+        (u) => u.team !== attacker.team && u.state !== 'DEAD' && u.id !== target.id && getHexDistance(u.position, target.position) <= 1
+      );
+      for (const adj of adjEnemies) {
+        this.applyDamage(attacker, adj, splashDmg, 'physical');
+      }
+    }
+
+    // Inquisitorial Squad: Bonus True Damage to crowd-controlled / detained enemies
+    const inqTrait = attackerTeamTraits.find((t) => t.traitId === 'Inquisitorial Squad' && t.activeTier >= 1);
+    if (inqTrait && attackerDef?.origins.includes('Inquisitorial Squad')) {
+      const bp = TRAITS['Inquisitorial Squad']?.breakpoints[inqTrait.activeTier - 1];
+      if (bp?.bonus.bonusTrueDamage) {
+        const isCCed = target.statusEffects.some((e) => e.type === 'stunned' || e.type === 'disarmed' || e.type === 'silenced');
+        if (isCCed) {
+          const bonusTrue = Math.max(1, Math.round(finalDamage * bp.bonus.bonusTrueDamage));
+          this.applyDamage(attacker, target, bonusTrue, 'true');
+        }
+      }
+    }
 
     // Inherent Fighter 10% Omnivamp (heals for 10% of damage dealt)
     if (attackerDef?.combatRole === 'Fighter') {
@@ -540,12 +718,12 @@ export class CombatSimulator {
           enemy.attackSpeed = Math.max(0.2, Math.round(enemy.attackSpeed * 0.65 * 100) / 100);
         }
       }
-    } else if (caster.unitDefId === 'viktor_krum') {
-      // Quidditch Dive: gains +30% Attack Speed for combat
-      caster.attackSpeed = Math.round(caster.attackSpeed * 1.3 * 100) / 100;
-    } else if (caster.unitDefId === 'nymphadora_tonks') {
-      // Metamorph Surge: stacks +35% Attack Speed on every cast
-      caster.attackSpeed = Math.round(caster.attackSpeed * 1.35 * 100) / 100;
+    } else if (caster.unitDefId === 'filius_flitwick') {
+      // Swarm of charms: grants +35% Attack Speed to all living allies
+      const allies = this.units.filter((u) => u.team === caster.team && u.state !== 'DEAD');
+      for (const a of allies) {
+        a.attackSpeed = Math.round(a.attackSpeed * 1.35 * 100) / 100;
+      }
     } else if (caster.unitDefId === 'madeye_moody') {
       // Constant Vigilance: gains +25 Armor and +25 MR
       caster.baseArmor += 25;
@@ -554,10 +732,12 @@ export class CombatSimulator {
     } else if (caster.unitDefId === 'cedric_diggory') {
       // Hufflepuff Valour: grants 250 shield to self and closest ally
       caster.shield += 250;
+      caster.totalShielding += 250;
       const allies = this.units.filter((u) => u.team === caster.team && u.state !== 'DEAD' && u.id !== caster.id);
       if (allies.length > 0) {
         allies.sort((a, b) => getHexDistance(a.position, caster.position) - getHexDistance(b.position, caster.position));
         allies[0].shield += 250;
+        allies[0].totalShielding += 250;
       }
     } else if (caster.unitDefId === 'molly_weasley') {
       // Maternal Reductor Blast: grants 450 HP shield to lowest HP ally
@@ -566,6 +746,8 @@ export class CombatSimulator {
         .sort((a, b) => a.currentHp - b.currentHp)[0];
       if (lowestAlly) {
         lowestAlly.shield += 450;
+        lowestAlly.totalShielding += 450;
+        caster.totalShielding += 450;
         this.events.push({
           tick: this.currentTick,
           type: 'SHIELD',
@@ -582,16 +764,37 @@ export class CombatSimulator {
         .sort((a, b) => getHexDistance(a.position, caster.position) - getHexDistance(b.position, caster.position))[0];
       if (closestAlly) {
         closestAlly.shield += 400;
+        closestAlly.totalShielding += 400;
+        caster.totalShielding += 400;
       }
       const farthestEnemy = this.units
         .filter((u) => u.team !== caster.team && u.state !== 'DEAD')
         .sort((a, b) => getHexDistance(b.position, caster.position) - getHexDistance(a.position, caster.position))[0];
       if (farthestEnemy) {
-        farthestEnemy.attackCooldown = Math.max(farthestEnemy.attackCooldown, 40);
+        farthestEnemy.attackCooldown = Math.max(farthestEnemy.attackCooldown, 32); // 1.6s charm
+      }
+    } else if (caster.unitDefId === 'argus_filch') {
+      // Mrs. Norris Prowl & Shackle: stuns target for 1.0s (1-cost)
+      let target = this.getUnitById(caster.targetId);
+      if (!target || target.state === 'DEAD') {
+        target = this.findBestTarget(caster);
+      }
+      if (target) {
+        this.applyStatusEffect(target, 'stunned', 1.0);
+      }
+    } else if (caster.unitDefId === 'dolores_umbridge') {
+      // Educational Decree #137: silences and disarms 3 highest threat enemies for 2.2s (4-cost)
+      const enemies = this.units
+        .filter((u) => u.team !== caster.team && u.state !== 'DEAD')
+        .sort((a, b) => (b.attackDamage + b.abilityPower * 100) - (a.attackDamage + a.abilityPower * 100))
+        .slice(0, 3);
+      for (const e of enemies) {
+        this.applyStatusEffect(e, 'silenced', 2.2);
+        this.applyStatusEffect(e, 'disarmed', 2.2);
       }
     }
 
-    // Golden Trio Synergy Resonance: grants 15 mana and 200 shield to other Golden Trio allies on cast
+    // Golden Trio Synergy Resonance: grants 12 mana and 150 shield to other Golden Trio allies on cast
     const casterTeamTraits = caster.team === 'home' ? this.homeTraits : this.awayTraits;
     const hasGoldenTrio = casterTeamTraits.some((t) => t.traitId === 'Golden Trio' && t.activeTier >= 1);
     if (
@@ -606,15 +809,73 @@ export class CombatSimulator {
           (u.unitDefId === 'harry_potter' || u.unitDefId === 'hermione_granger' || u.unitDefId === 'ron_weasley')
       );
       for (const ally of trioAllies) {
-        ally.currentMana = Math.min(ally.maxMana, ally.currentMana + 15);
-        ally.shield += 200;
+        ally.currentMana = Math.min(ally.maxMana, ally.currentMana + 12);
+        ally.shield += 150;
+        ally.totalShielding += 150;
+        caster.totalShielding += 150;
         this.events.push({
           tick: this.currentTick,
           type: 'SHIELD',
           sourceId: caster.id,
           targetId: ally.id,
-          value: 200,
+          value: 150,
           remainingHp: ally.currentHp,
+        });
+      }
+    }
+
+    // Weasley Family Synergy: heals all Weasleys for 120 HP on ability cast
+    const hasWeasleyFamily = casterTeamTraits.some((t) => t.traitId === 'Weasley' && t.activeTier >= 1);
+    if (
+      hasWeasleyFamily &&
+      (caster.unitDefId === 'ron_weasley' || caster.unitDefId === 'ginny_weasley' || caster.unitDefId === 'fred_and_george' || caster.unitDefId === 'molly_weasley' || caster.unitDefId === 'arthur_weasley')
+    ) {
+      const weasleyAllies = this.units.filter(
+        (u) =>
+          u.team === caster.team &&
+          u.state !== 'DEAD' &&
+          (u.unitDefId === 'ron_weasley' || u.unitDefId === 'ginny_weasley' || u.unitDefId === 'fred_and_george' || u.unitDefId === 'molly_weasley' || u.unitDefId === 'arthur_weasley')
+      );
+      for (const w of weasleyAllies) {
+        if (w.currentHp < w.maxHp) {
+          const heal = Math.min(120, w.maxHp - w.currentHp);
+          w.currentHp += heal;
+          caster.totalHealing += heal;
+          this.events.push({
+            tick: this.currentTick,
+            type: 'HEAL',
+            sourceId: caster.id,
+            targetId: w.id,
+            value: heal,
+            remainingHp: w.currentHp,
+          });
+        }
+      }
+    }
+
+    // Patil Sisters Synergy: grants 140 HP shield to both sisters on ability cast
+    const hasPatilSisters = casterTeamTraits.some((t) => t.traitId === 'Patil Sisters' && t.activeTier >= 1);
+    if (
+      hasPatilSisters &&
+      (caster.unitDefId === 'padma_patil' || caster.unitDefId === 'parvati_patil')
+    ) {
+      const patilAllies = this.units.filter(
+        (u) =>
+          u.team === caster.team &&
+          u.state !== 'DEAD' &&
+          (u.unitDefId === 'padma_patil' || u.unitDefId === 'parvati_patil')
+      );
+      for (const p of patilAllies) {
+        p.shield += 140;
+        p.totalShielding += 140;
+        caster.totalShielding += 140;
+        this.events.push({
+          tick: this.currentTick,
+          type: 'SHIELD',
+          sourceId: caster.id,
+          targetId: p.id,
+          value: 140,
+          remainingHp: p.currentHp,
         });
       }
     }
@@ -686,22 +947,38 @@ export class CombatSimulator {
     } else if (caster.unitDefId === 'pansy_parkinson') {
       // Slytherin Sting: Applies 20% Magic Resist smShred for 5s (refreshed on hit)
       this.applyStatusEffect(target, 'smShred', 5, 0.20);
-    } else if (caster.unitDefId === 'neville_longbottom' || caster.unitDefId === 'fleur_delacour') {
-      // Stun / Charm target for 1.5s
-      target.attackCooldown = Math.max(target.attackCooldown, 30);
+    } else if (caster.unitDefId === 'neville_longbottom') {
+      // Petrificus Totalus: 1.0s stun (1-cost)
+      target.attackCooldown = Math.max(target.attackCooldown, 20);
+    } else if (caster.unitDefId === 'fleur_delacour') {
+      // Alluring Charm: 1.4s charm (2-cost)
+      target.attackCooldown = Math.max(target.attackCooldown, 28);
     }
 
     if (damageType === 'magic') {
       const effectiveMR = Math.max(0, target.magicResist);
       const mitigation = 100 / (100 + effectiveMR);
       finalDmg = Math.max(1, Math.round(finalDmg * mitigation));
+      target.totalMagicMitigated += Math.max(0, Math.round(rawDamage - finalDmg));
     } else if (damageType === 'physical') {
       const effectiveArmor = Math.max(0, target.armor);
       const mitigation = 100 / (100 + effectiveArmor);
       finalDmg = Math.max(1, Math.round(finalDmg * mitigation));
+      target.totalPhysicalMitigated += Math.max(0, Math.round(rawDamage - finalDmg));
     }
 
     this.applyDamage(caster, target, finalDmg, damageType, isCrit);
+
+    // Inquisitorial Squad (5): +18% bonus True Damage to crowd-controlled / detained enemies
+    const casterTeamTraits = caster.team === 'home' ? this.homeTraits : this.awayTraits;
+    const hasInquisitorial5 = casterTeamTraits.some((t) => t.traitId === 'Inquisitorial Squad' && t.activeTier >= 2);
+    if (hasInquisitorial5 && casterDef?.origins.includes('Inquisitorial Squad')) {
+      const isCCed = target.statusEffects.some((e) => e.type === 'stunned' || e.type === 'disarmed' || e.type === 'silenced');
+      if (isCCed) {
+        const bonusTrue = Math.max(1, Math.round(finalDmg * 0.18));
+        this.applyDamage(caster, target, bonusTrue, 'true');
+      }
+    }
 
     // Inherent Fighter 10% Omnivamp on spell damage
     if (casterDef?.combatRole === 'Fighter') {
@@ -728,27 +1005,89 @@ export class CombatSimulator {
     isCrit: boolean = false
   ): void {
     const targetDef = UNITS[target.unitDefId];
-    let remainingDmg = damage;
+    const attackerDef = UNITS[attacker.unitDefId];
+    const targetTeamTraits = target.team === 'home' ? this.homeTraits : this.awayTraits;
+    const attackerTeamTraits = attacker.team === 'home' ? this.homeTraits : this.awayTraits;
+    let effectiveDmg = damage;
+
+    // Overtime / Sudden Death 50% damage amplification
+    if (this.inOvertime) {
+      effectiveDmg = Math.round(effectiveDmg * 1.5);
+    }
+
+    // Hufflepuff teamwide damage reduction
+    const huffTrait = targetTeamTraits.find((t) => t.traitId === 'Hufflepuff' && t.activeTier >= 1);
+    if (huffTrait) {
+      const bp = TRAITS['Hufflepuff']?.breakpoints[huffTrait.activeTier - 1];
+      const dr = bp?.bonus.damageReduction ?? 0.08;
+      effectiveDmg = Math.max(1, Math.round(effectiveDmg * (1 - dr)));
+    }
+
+    // Ghost physical damage reduction
+    if (damageType === 'physical' && targetDef?.origins.includes('Ghost')) {
+      const ghostTrait = targetTeamTraits.find((t) => t.traitId === 'Ghost' && t.activeTier >= 1);
+      if (ghostTrait) {
+        const bp = TRAITS['Ghost']?.breakpoints[ghostTrait.activeTier - 1];
+        const dr = bp?.bonus.damageReduction ?? 0.14;
+        effectiveDmg = Math.max(1, Math.round(effectiveDmg * (1 - dr)));
+      }
+    }
 
     // Negate crit damage if target has Hogwarts Castle Bastion Armor
     if (isCrit && target.items.includes('hogwarts_bastion')) {
-      remainingDmg = Math.round(remainingDmg / 1.5);
+      effectiveDmg = Math.round(effectiveDmg / 1.5);
     }
+
+    let remainingDmg = effectiveDmg;
 
     // Shield absorption
     if (target.shield > 0) {
       if (target.shield >= remainingDmg) {
         target.shield -= remainingDmg;
+        target.totalShielding += remainingDmg;
         remainingDmg = 0;
       } else {
+        target.totalShielding += target.shield;
         remainingDmg -= target.shield;
         target.shield = 0;
       }
     }
 
     target.currentHp = Math.max(0, target.currentHp - remainingDmg);
-    attacker.totalDamageDealt += damage;
-    target.totalDamageTaken += damage;
+    attacker.totalDamageDealt += effectiveDmg;
+    target.totalDamageTaken += effectiveDmg;
+
+    // Gryffindor shield when dropping below threshold
+    const gryffTrait = targetTeamTraits.find((t) => t.traitId === 'Gryffindor' && t.activeTier >= 2);
+    if (gryffTrait && targetDef?.origins.includes('Gryffindor') && !target.hasGryffindorShielded) {
+      const bp = TRAITS['Gryffindor']?.breakpoints[gryffTrait.activeTier - 1];
+      const threshold = bp?.bonus.shieldThreshold ?? 0.40;
+      const shieldAmount = bp?.bonus.shieldHp ?? 220;
+      if (target.currentHp > 0 && target.currentHp / target.maxHp <= threshold) {
+        target.hasGryffindorShielded = true;
+        target.shield += shieldAmount;
+        target.totalShielding += shieldAmount;
+        this.events.push({
+          tick: this.currentTick,
+          type: 'SHIELD',
+          sourceId: target.id,
+          targetId: target.id,
+          value: shieldAmount,
+          remainingHp: target.currentHp,
+        });
+      }
+    }
+
+    // Slytherin execution below threshold
+    const slytherinTrait = attackerTeamTraits.find((t) => t.traitId === 'Slytherin' && t.activeTier >= 1);
+    if (slytherinTrait && attackerDef?.origins.includes('Slytherin')) {
+      const bp = TRAITS['Slytherin']?.breakpoints[slytherinTrait.activeTier - 1];
+      const threshold = bp?.bonus.executeThreshold ?? 0.08;
+      if (target.currentHp > 0 && target.currentHp / target.maxHp <= threshold) {
+        target.currentHp = 0;
+        target.state = 'DEAD';
+      }
+    }
 
     // Innate Role Mana Gain on taking damage:
     // Only Tank role gains mana from taking damage (~8% of pre-mitigation damage, capped at 40)
@@ -834,26 +1173,100 @@ export class CombatSimulator {
     return enemies[0] || null;
   }
 
-  private moveUnitTowards(unit: CombatUnit, targetPos: GridPosition): void {
+  private findNextHexStep(unit: CombatUnit, target: CombatUnit): GridPosition | null {
     const occupiedTiles = new Set(
       this.units
         .filter((u) => u.state !== 'DEAD' && u.id !== unit.id)
         .map((u) => `${u.position.x},${u.position.y}`)
     );
 
-    const neighbors = getHexNeighbors(unit.position, 0, 7, 0, 7);
-    const freeNeighbors = neighbors.filter((p) => !occupiedTiles.has(`${p.x},${p.y}`));
+    const startKey = `${unit.position.x},${unit.position.y}`;
+    const queue: GridPosition[] = [unit.position];
+    const visited = new Set<string>([startKey]);
+    const parentMap = new Map<string, GridPosition>();
 
-    if (freeNeighbors.length === 0) return;
+    let destinationTile: GridPosition | null = null;
 
-    // Pick hex neighbor that minimizes distance to target
-    freeNeighbors.sort(
-      (a, b) => getHexDistance(a, targetPos) - getHexDistance(b, targetPos)
-    );
+    while (queue.length > 0) {
+      const curr = queue.shift()!;
+      const currDist = getHexDistance(curr, target.position);
 
-    const nextTile = freeNeighbors[0];
+      // Found a tile within attack range of target!
+      if (currDist <= unit.range) {
+        destinationTile = curr;
+        break;
+      }
+
+      const neighbors = getHexNeighbors(curr, 0, 7, 0, 7);
+      for (const n of neighbors) {
+        const nKey = `${n.x},${n.y}`;
+        if (!visited.has(nKey) && !occupiedTiles.has(nKey)) {
+          visited.add(nKey);
+          parentMap.set(nKey, curr);
+          queue.push(n);
+        }
+      }
+    }
+
+    // If no path to current target (target completely blocked/surrounded), find path to ANY accessible enemy
+    if (!destinationTile) {
+      const otherEnemies = this.units.filter(
+        (u) => u.team !== unit.team && u.state !== 'DEAD' && u.id !== target.id
+      );
+      if (otherEnemies.length > 0) {
+        const altQueue: GridPosition[] = [unit.position];
+        const altVisited = new Set<string>([startKey]);
+        const altParentMap = new Map<string, GridPosition>();
+
+        while (altQueue.length > 0) {
+          const curr = altQueue.shift()!;
+          const reachableEnemy = otherEnemies.find(
+            (e) => getHexDistance(curr, e.position) <= unit.range
+          );
+          if (reachableEnemy) {
+            destinationTile = curr;
+            unit.targetId = reachableEnemy.id;
+            let step = destinationTile;
+            let prev = altParentMap.get(`${step.x},${step.y}`);
+            while (prev && `${prev.x},${prev.y}` !== startKey) {
+              step = prev;
+              prev = altParentMap.get(`${step.x},${step.y}`);
+            }
+            return step;
+          }
+
+          const neighbors = getHexNeighbors(curr, 0, 7, 0, 7);
+          for (const n of neighbors) {
+            const nKey = `${n.x},${n.y}`;
+            if (!altVisited.has(nKey) && !occupiedTiles.has(nKey)) {
+              altVisited.add(nKey);
+              altParentMap.set(nKey, curr);
+              altQueue.push(n);
+            }
+          }
+        }
+      }
+      return null;
+    }
+
+    // Reconstruct the first step from unit.position towards destinationTile
+    let step = destinationTile;
+    let prev = parentMap.get(`${step.x},${step.y}`);
+    while (prev && `${prev.x},${prev.y}` !== startKey) {
+      step = prev;
+      prev = parentMap.get(`${step.x},${step.y}`);
+    }
+
+    return step;
+  }
+
+  private moveUnitTowards(unit: CombatUnit, target: CombatUnit): void {
+    const nextTile = this.findNextHexStep(unit, target);
+    if (!nextTile) return;
+
     const fromPos = { ...unit.position };
     unit.position = nextTile;
+    unit.moveCooldown = 6; // 6 ticks = 0.3s per step (smooth tactical speed)
 
     this.events.push({
       tick: this.currentTick,
@@ -928,7 +1341,11 @@ export class CombatSimulator {
         cost: def?.cost || 1,
         damageDealt: u.totalDamageDealt,
         damageTaken: u.totalDamageTaken,
+        physicalMitigated: u.totalPhysicalMitigated,
+        magicMitigated: u.totalMagicMitigated,
+        totalMitigated: u.totalPhysicalMitigated + u.totalMagicMitigated,
         healing: u.totalHealing,
+        shielding: u.totalShielding,
         survived: u.state !== 'DEAD',
         hpPercent: Math.round((u.currentHp / u.maxHp) * 100),
         items: [...u.items],

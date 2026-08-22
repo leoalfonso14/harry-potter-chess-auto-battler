@@ -1,7 +1,7 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { ArenaRenderer } from '../render/ArenaRenderer';
 import { useGameSocket } from '../context/GameSocketContext';
-import { BoardUnit } from '@autobattler/shared';
+import { BoardUnit, BASE_ITEMS, BaseItemId } from '@autobattler/shared';
 import { InspectedUnitData } from './HUD/UnitInspector';
 import { FlyingLootOverlay, FlyingLootData } from './HUD/FlyingLootOverlay';
 
@@ -232,24 +232,37 @@ export const ArenaCanvas: React.FC<{
           isScouting
         );
       }
-    } else if (matchState.phase === 'COMBAT' && activeCombatResult && !isScouting) {
-      // Start combat playback for your active match
-      const combatKey = `${matchState.stage}_${matchState.roundInStage}_${activeCombatResult.homePlayerId}_vs_${activeCombatResult.awayPlayerId}`;
+    } else if (matchState.phase === 'COMBAT' || matchState.phase === 'RESOLUTION') {
+      // Find combat result for currently viewed board (own board or scouted player)
+      const viewingCombatResult =
+        matchState.combatResults[activeViewingId] ||
+        matchState.combatResults[`${activeViewingId}_vs_pve`] ||
+        (player.opponentId ? matchState.combatResults[`${activeViewingId}_vs_${player.opponentId}`] : undefined) ||
+        (!isScouting ? activeCombatResult : undefined);
 
-      if (lastCombatMatchRef.current !== combatKey) {
-        lastCombatMatchRef.current = combatKey;
-        lastRenderHashRef.current = '';
-        rendererRef.current.startCombatPlayback(activeCombatResult, player.gold);
+      if (viewingCombatResult) {
+        const combatKey = `${matchState.stage}_${matchState.roundInStage}_${activeViewingId}_${viewingCombatResult.homePlayerId}_vs_${viewingCombatResult.awayPlayerId}`;
+
+        if (lastCombatMatchRef.current !== combatKey) {
+          lastCombatMatchRef.current = combatKey;
+          lastRenderHashRef.current = '';
+
+          // Calculate current timestamp in combat to jump into the fight at the current moment
+          const elapsedSec = Math.max(0, matchState.phaseDuration - matchState.phaseTimeRemaining);
+          const startTick = elapsedSec * 20; // 20 ticks per sec
+
+          rendererRef.current.startCombatPlayback(viewingCombatResult, player.gold, startTick);
+        } else {
+          // Gold / econ update during combat - update interest orbs without restarting combat playback
+          rendererRef.current.renderInterestMarkers(player.gold);
+        }
       } else {
-        // Gold / econ update during combat - update interest orbs without restarting combat playback
-        rendererRef.current.renderInterestMarkers(player.gold);
-      }
-    } else if (matchState.phase === 'COMBAT' && isScouting) {
-      // If scouting another player during combat, show their board
-      const currentHash = `scouting_combat_${activeViewingId}_${JSON.stringify(player.board)}_${player.gold}`;
-      if (lastRenderHashRef.current !== currentHash) {
-        lastRenderHashRef.current = currentHash;
-        rendererRef.current.renderPlanningState(player.board, undefined, player.gold, true);
+        // Fallback if no combat result found
+        const currentHash = `scouting_combat_${activeViewingId}_${JSON.stringify(player.board)}_${player.gold}`;
+        if (lastRenderHashRef.current !== currentHash) {
+          lastRenderHashRef.current = currentHash;
+          rendererRef.current.renderPlanningState(player.board, undefined, player.gold, true);
+        }
       }
     }
   }, [matchState, activeViewingId, isScouting, activeCombatResult]);
@@ -266,13 +279,45 @@ export const ArenaCanvas: React.FC<{
     const currentItemBench = player.itemBench || [];
     const prevItemBench = previousItemBenchRef.current;
 
-    // Detect newly gained items (e.g. from PvE round victory)
+    // Detect newly gained items (e.g. from PvE round victory drops)
     if (prevItemBench.length > 0) {
+      const prevInventory: Record<string, number> = {};
+      for (const item of prevItemBench) {
+        if (item) {
+          prevInventory[item] = (prevInventory[item] || 0) + 1;
+        }
+      }
+
+      const currentInventory: Record<string, number> = {};
+      for (const item of currentItemBench) {
+        if (item) {
+          currentInventory[item] = (currentInventory[item] || 0) + 1;
+        }
+      }
+
+      // Track newly added excess item instances
+      const newItemsAvailable: Record<string, number> = {};
+      for (const [item, count] of Object.entries(currentInventory)) {
+        const prevCount = prevInventory[item] || 0;
+        if (count > prevCount) {
+          newItemsAvailable[item] = count - prevCount;
+        }
+      }
+
       for (let slot = 0; slot < currentItemBench.length; slot++) {
         const currentItem = currentItemBench[slot];
         const prevItem = prevItemBench[slot];
 
-        if (currentItem && !prevItem) {
+        // Only spawn flying drop animation if this slot holds a genuine newly added component drop
+        if (
+          currentItem &&
+          !prevItem &&
+          newItemsAvailable[currentItem] &&
+          newItemsAvailable[currentItem] > 0 &&
+          BASE_ITEMS[currentItem as BaseItemId]
+        ) {
+          newItemsAvailable[currentItem]--;
+
           // New item appeared! Spawn flying loot animation from enemy death location to item bench
           let startX = window.innerWidth / 2;
           let startY = window.innerHeight / 3;

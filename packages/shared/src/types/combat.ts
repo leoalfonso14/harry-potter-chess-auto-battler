@@ -4,7 +4,19 @@ export type CombatTeam = 'home' | 'away';
 
 export type CombatUnitState = 'IDLE' | 'MOVING' | 'ATTACKING' | 'CASTING' | 'STUNNED' | 'DEAD';
 
-export type StatusEffectType = 'smSunder' | 'sunder' | 'smShred' | 'shred' | 'stun' | 'wound' | 'burn';
+export type StatusEffectType =
+  | 'smSunder'
+  | 'sunder'
+  | 'smShred'
+  | 'shred'
+  | 'stun'
+  | 'stunned'
+  | 'disarm'
+  | 'disarmed'
+  | 'silence'
+  | 'silenced'
+  | 'wound'
+  | 'burn';
 
 export interface StatusEffect {
   type: StatusEffectType;
@@ -34,16 +46,24 @@ export interface CombatUnit {
   abilityPower: number; // multiplier, 1.0 = 100%
   critChance: number;   // 0.0 to 1.0
   critMultiplier: number;
+  dodgeChance?: number; // 0.0 to 1.0
   state: CombatUnitState;
   targetId: string | null;
   attackCooldown: number; // ticks until next attack
+  moveCooldown: number;   // ticks until next movement step (smooth pacing)
   castDuration: number;   // ticks remaining in cast
   items: string[];
   totalDamageDealt: number;
   totalDamageTaken: number;
+  totalPhysicalMitigated: number;
+  totalMagicMitigated: number;
   totalHealing: number;
+  totalShielding: number;
   shield: number;
   manaPerSec?: number;
+  duelistStacks?: number;
+  hasGryffindorShielded?: boolean;
+  hasWeasleyShielded?: boolean;
   statusEffects: StatusEffect[];
 }
 
@@ -57,6 +77,7 @@ export type CombatEventType =
   | 'HEAL'
   | 'SHIELD'
   | 'STUN'
+  | 'OVERTIME'
   | 'DEATH'
   | 'COMBAT_END';
 
@@ -86,7 +107,11 @@ export interface UnitCombatSummary {
   cost: number;
   damageDealt: number;
   damageTaken: number;
+  physicalMitigated: number;
+  magicMitigated: number;
+  totalMitigated: number;
   healing: number;
+  shielding: number;
   survived: boolean;
   hpPercent: number;
   items?: string[];

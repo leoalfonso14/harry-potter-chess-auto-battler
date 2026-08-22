@@ -21,9 +21,9 @@ export const UNITS: Record<string, UnitDefinition> = {
       "armor": 40,
       "magicResist": 35,
       "attackDamage": [
-        45,
-        81,
-        162
+        36,
+        65,
+        130
       ],
       "attackSpeed": 0.65,
       "range": 1,
@@ -32,13 +32,13 @@ export const UNITS: Record<string, UnitDefinition> = {
     },
     "ability": {
       "name": "Petrificus Totalus",
-      "description": "Stuns the target in full-body bind for 2s, dealing magic damage.",
+      "description": "Stuns the target in a full-body bind and deals damage.",
       "manaCost": 70,
-      "damageType": "magic",
+      "damageType": "physical",
       "damageValues": [
-        150,
-        270,
-        540
+        120,
+        216,
+        432
       ],
       "targetType": "single"
     },
@@ -64,24 +64,24 @@ export const UNITS: Record<string, UnitDefinition> = {
       "armor": 20,
       "magicResist": 25,
       "attackDamage": [
-        42,
-        76,
-        151
+        34,
+        61,
+        121
       ],
       "attackSpeed": 0.7,
-      "range": 3,
+      "range": 4,
       "startingMana": 10,
       "maxMana": 60
     },
     "ability": {
       "name": "Flashbulb Jinx",
-      "description": "Fires a blazing flashbulb blast that damages and blinds the nearest target for 2s.",
+      "description": "Fires a blazing flashbulb blast that damages and blinds the nearest target.",
       "manaCost": 60,
       "damageType": "magic",
       "damageValues": [
-        165,
-        297,
-        594
+        132,
+        238,
+        475
       ],
       "targetType": "single"
     },
@@ -90,11 +90,11 @@ export const UNITS: Record<string, UnitDefinition> = {
   "draco_malfoy": {
     "id": "draco_malfoy",
     "name": "Draco Malfoy",
-    "cost": 1,
+    "cost": 3,
     "combatRole": "Assassin",
     "origins": [
       "Slytherin",
-      "Slytherin Trio",
+      "Inquisitorial Squad",
       "Malfoy"
     ],
     "classes": [
@@ -102,31 +102,31 @@ export const UNITS: Record<string, UnitDefinition> = {
     ],
     "stats": {
       "hp": [
-        520,
-        936,
-        1872
+        780,
+        1755,
+        3042
       ],
-      "armor": 25,
-      "magicResist": 25,
+      "armor": 35,
+      "magicResist": 30,
       "attackDamage": [
-        55,
-        99,
-        198
+        60,
+        135,
+        234
       ],
-      "attackSpeed": 0.75,
+      "attackSpeed": 0.85,
       "range": 1,
-      "startingMana": 10,
-      "maxMana": 60
+      "startingMana": 15,
+      "maxMana": 65
     },
     "ability": {
-      "name": "Serpensortia",
-      "description": "Summons a venomous viper that strikes the target for ticking poison damage.",
-      "manaCost": 60,
+      "name": "Serpensortia Viper Strike",
+      "description": "Summons an aggressive venomous serpent that strikes the target for massive poison damage.",
+      "manaCost": 65,
       "damageType": "magic",
       "damageValues": [
-        180,
-        324,
-        648
+        232,
+        522,
+        905
       ],
       "targetType": "single"
     },
@@ -139,7 +139,7 @@ export const UNITS: Record<string, UnitDefinition> = {
     "combatRole": "Fighter",
     "origins": [
       "Slytherin",
-      "Slytherin Trio"
+      "Inquisitorial Squad"
     ],
     "classes": [
       "Brawler"
@@ -153,9 +153,9 @@ export const UNITS: Record<string, UnitDefinition> = {
       "armor": 35,
       "magicResist": 25,
       "attackDamage": [
-        50,
-        90,
-        180
+        40,
+        72,
+        144
       ],
       "attackSpeed": 0.6,
       "range": 1,
@@ -164,13 +164,13 @@ export const UNITS: Record<string, UnitDefinition> = {
     },
     "ability": {
       "name": "Bully Tackle",
-      "description": "Slams his heavy bulk into the target, gaining a 200 HP shield and dealing damage.",
+      "description": "Slams heavy bulk into the target, gaining a shield and dealing damage.",
       "manaCost": 80,
       "damageType": "physical",
       "damageValues": [
-        140,
-        252,
-        504
+        112,
+        202,
+        403
       ],
       "targetType": "single"
     },
@@ -179,42 +179,42 @@ export const UNITS: Record<string, UnitDefinition> = {
   "gregory_goyle": {
     "id": "gregory_goyle",
     "name": "Gregory Goyle",
-    "cost": 1,
+    "cost": 2,
     "combatRole": "Tank",
     "origins": [
       "Slytherin",
-      "Slytherin Trio"
+      "Inquisitorial Squad"
     ],
     "classes": [
       "Guardian"
     ],
     "stats": {
       "hp": [
-        700,
-        1260,
-        2520
+        800,
+        1440,
+        2880
       ],
-      "armor": 40,
-      "magicResist": 30,
+      "armor": 45,
+      "magicResist": 35,
       "attackDamage": [
         48,
         86,
         173
       ],
-      "attackSpeed": 0.6,
+      "attackSpeed": 0.65,
       "range": 1,
       "startingMana": 0,
-      "maxMana": 75
+      "maxMana": 80
     },
     "ability": {
       "name": "Brute Wall Slam",
-      "description": "Plants feet and slams forward, gaining 250 shield and reducing target attack speed.",
-      "manaCost": 75,
+      "description": "Plants feet and slams forward, gaining a shield and reducing target attack speed.",
+      "manaCost": 80,
       "damageType": "physical",
       "damageValues": [
-        140,
-        252,
-        504
+        160,
+        288,
+        576
       ],
       "targetType": "single"
     },
@@ -240,24 +240,24 @@ export const UNITS: Record<string, UnitDefinition> = {
       "armor": 20,
       "magicResist": 45,
       "attackDamage": [
-        42,
-        76,
-        151
+        34,
+        61,
+        121
       ],
       "attackSpeed": 0.7,
-      "range": 3,
+      "range": 4,
       "startingMana": 20,
       "maxMana": 70
     },
     "ability": {
       "name": "Spectrespecs Lumos",
-      "description": "Radiates mystical moonlight, dealing magic damage and granting +30 MR to allies.",
+      "description": "Radiates mystical moonlight, dealing magic damage and granting bonus Magic Resist to allies.",
       "manaCost": 70,
       "damageType": "magic",
       "damageValues": [
-        160,
-        288,
-        576
+        128,
+        230,
+        461
       ],
       "targetType": "aoe",
       "radius": 2
@@ -284,24 +284,24 @@ export const UNITS: Record<string, UnitDefinition> = {
       "armor": 20,
       "magicResist": 20,
       "attackDamage": [
-        50,
-        90,
-        180
+        48,
+        86,
+        173
       ],
       "attackSpeed": 0.8,
-      "range": 4,
+      "range": 5,
       "startingMana": 0,
       "maxMana": 60
     },
     "ability": {
       "name": "Glisseo Frost Shot",
-      "description": "Fires an icy frost bolt that chills the target, dealing physical damage and slowing AS.",
+      "description": "Fires an icy frost bolt that chills the target, dealing physical damage and slowing attack speed.",
       "manaCost": 60,
       "damageType": "physical",
       "damageValues": [
-        170,
-        306,
-        612
+        136,
+        245,
+        490
       ],
       "targetType": "single"
     },
@@ -327,9 +327,9 @@ export const UNITS: Record<string, UnitDefinition> = {
       "armor": 25,
       "magicResist": 30,
       "attackDamage": [
-        42,
-        76,
-        151
+        34,
+        61,
+        121
       ],
       "attackSpeed": 0.65,
       "range": 3,
@@ -338,13 +338,13 @@ export const UNITS: Record<string, UnitDefinition> = {
     },
     "ability": {
       "name": "Episkey Mend",
-      "description": "Heals the lowest-health ally for massive health and cleanses negative status effects.",
+      "description": "Heals the lowest-health ally and cleanses negative status effects.",
       "manaCost": 70,
-      "damageType": "magic",
+      "damageType": "physical",
       "damageValues": [
-        180,
-        324,
-        648
+        144,
+        259,
+        518
       ],
       "targetType": "lowest_hp"
     },
@@ -370,9 +370,9 @@ export const UNITS: Record<string, UnitDefinition> = {
       "armor": 40,
       "magicResist": 35,
       "attackDamage": [
-        44,
-        79,
-        158
+        35,
+        63,
+        126
       ],
       "attackSpeed": 0.65,
       "range": 1,
@@ -381,13 +381,13 @@ export const UNITS: Record<string, UnitDefinition> = {
     },
     "ability": {
       "name": "Protego Shield Wall",
-      "description": "Erects a protective golden ward that absorbs 280 damage for herself and adjacent allies.",
+      "description": "Erects a protective golden ward that shields herself and adjacent allies.",
       "manaCost": 70,
-      "damageType": "magic",
+      "damageType": "physical",
       "damageValues": [
-        140,
-        252,
-        504
+        112,
+        202,
+        403
       ],
       "targetType": "allies"
     },
@@ -413,9 +413,9 @@ export const UNITS: Record<string, UnitDefinition> = {
       "armor": 25,
       "magicResist": 35,
       "attackDamage": [
-        46,
-        83,
-        166
+        37,
+        66,
+        133
       ],
       "attackSpeed": 0.75,
       "range": 2,
@@ -424,13 +424,13 @@ export const UNITS: Record<string, UnitDefinition> = {
     },
     "ability": {
       "name": "Elf Snap & Disarm",
-      "description": "Snaps fingers with wandless magic, disarming the target for 2.5s and blinking away.",
+      "description": "Snaps fingers with wandless magic, disarming the target and blinking away.",
       "manaCost": 60,
       "damageType": "magic",
       "damageValues": [
-        140,
-        252,
-        504
+        112,
+        202,
+        403
       ],
       "targetType": "single"
     },
@@ -456,9 +456,9 @@ export const UNITS: Record<string, UnitDefinition> = {
       "armor": 25,
       "magicResist": 40,
       "attackDamage": [
-        42,
-        76,
-        151
+        34,
+        61,
+        121
       ],
       "attackSpeed": 0.7,
       "range": 3,
@@ -467,13 +467,13 @@ export const UNITS: Record<string, UnitDefinition> = {
     },
     "ability": {
       "name": "Butterbeer Ward",
-      "description": "Channels loyal domestic charms, granting +35 MR and a 220 HP shield to the lowest HP ally.",
+      "description": "Channels loyal domestic charms, granting bonus Magic Resist and a shield to the lowest HP ally.",
       "manaCost": 65,
       "damageType": "magic",
       "damageValues": [
-        150,
-        270,
-        540
+        120,
+        216,
+        432
       ],
       "targetType": "lowest_hp"
     },
@@ -499,9 +499,9 @@ export const UNITS: Record<string, UnitDefinition> = {
       "armor": 20,
       "magicResist": 25,
       "attackDamage": [
-        42,
-        76,
-        151
+        34,
+        61,
+        121
       ],
       "attackSpeed": 0.75,
       "range": 3,
@@ -510,13 +510,13 @@ export const UNITS: Record<string, UnitDefinition> = {
     },
     "ability": {
       "name": "Camouflage & Haste",
-      "description": "Shoots a soothing thorn for minor damage and empowers the closest ally with +50% Attack Speed.",
+      "description": "Shoots a soothing thorn and empowers the closest ally with bonus Attack Speed.",
       "manaCost": 50,
       "damageType": "magic",
       "damageValues": [
-        140,
-        252,
-        504
+        112,
+        202,
+        403
       ],
       "targetType": "allies"
     },
@@ -542,9 +542,9 @@ export const UNITS: Record<string, UnitDefinition> = {
       "armor": 25,
       "magicResist": 30,
       "attackDamage": [
-        46,
-        83,
-        166
+        37,
+        66,
+        133
       ],
       "attackSpeed": 0.8,
       "range": 1,
@@ -553,13 +553,13 @@ export const UNITS: Record<string, UnitDefinition> = {
     },
     "ability": {
       "name": "Shiny Snatch",
-      "description": "Dashes behind the target, stealing 15 Mana and dealing physical bite damage.",
+      "description": "Dashes behind the target, stealing Mana and dealing physical bite damage.",
       "manaCost": 55,
       "damageType": "physical",
       "damageValues": [
-        150,
-        270,
-        540
+        120,
+        216,
+        432
       ],
       "targetType": "single"
     },
@@ -585,9 +585,9 @@ export const UNITS: Record<string, UnitDefinition> = {
       "armor": 35,
       "magicResist": 25,
       "attackDamage": [
-        54,
-        97,
-        194
+        43,
+        78,
+        155
       ],
       "attackSpeed": 0.65,
       "range": 1,
@@ -596,13 +596,13 @@ export const UNITS: Record<string, UnitDefinition> = {
     },
     "ability": {
       "name": "Northern Heavy Cleave",
-      "description": "Swings an icy iron staff, cleaving adjacent foes and gaining +20 Armor.",
+      "description": "Swings an icy iron staff, cleaving adjacent foes and gaining bonus Armor.",
       "manaCost": 70,
       "damageType": "physical",
       "damageValues": [
-        160,
-        288,
-        576
+        128,
+        230,
+        461
       ],
       "targetType": "single"
     },
@@ -628,9 +628,9 @@ export const UNITS: Record<string, UnitDefinition> = {
       "armor": 20,
       "magicResist": 30,
       "attackDamage": [
-        42,
-        76,
-        151
+        34,
+        61,
+        121
       ],
       "attackSpeed": 0.7,
       "range": 3,
@@ -639,13 +639,13 @@ export const UNITS: Record<string, UnitDefinition> = {
     },
     "ability": {
       "name": "Veela Blessing",
-      "description": "Casts a gentle radiant beam that restores 240 Health to the 2 lowest HP allies.",
+      "description": "Casts a gentle radiant beam that restores Health to the lowest HP allies.",
       "manaCost": 60,
       "damageType": "magic",
       "damageValues": [
-        180,
-        324,
-        648
+        144,
+        259,
+        518
       ],
       "targetType": "lowest_hp"
     },
@@ -672,9 +672,9 @@ export const UNITS: Record<string, UnitDefinition> = {
       "armor": 30,
       "magicResist": 40,
       "attackDamage": [
-        42,
-        76,
-        151
+        34,
+        61,
+        121
       ],
       "attackSpeed": 0.65,
       "range": 3,
@@ -683,13 +683,13 @@ export const UNITS: Record<string, UnitDefinition> = {
     },
     "ability": {
       "name": "Wailing Flood",
-      "description": "Summons a flooding bathroom wave centered on her target, dealing magic damage and slowing enemy Attack Speed by 35% in a 2-hex radius around the target.",
+      "description": "Summons a flooding bathroom wave centered on her target, dealing magic damage and slowing enemy Attack Speed in an area.",
       "manaCost": 100,
       "damageType": "magic",
       "damageValues": [
-        150,
-        270,
-        540
+        120,
+        216,
+        432
       ],
       "targetType": "aoe",
       "radius": 2
@@ -718,9 +718,9 @@ export const UNITS: Record<string, UnitDefinition> = {
       "armor": 35,
       "magicResist": 30,
       "attackDamage": [
-        64,
-        112,
-        237
+        51,
+        90,
+        190
       ],
       "attackSpeed": 0.7,
       "range": 1,
@@ -733,9 +733,9 @@ export const UNITS: Record<string, UnitDefinition> = {
       "manaCost": 80,
       "damageType": "physical",
       "damageValues": [
-        220,
-        385,
-        814
+        176,
+        308,
+        651
       ],
       "targetType": "single"
     },
@@ -762,24 +762,24 @@ export const UNITS: Record<string, UnitDefinition> = {
       "armor": 25,
       "magicResist": 35,
       "attackDamage": [
-        50,
-        88,
-        185
+        40,
+        70,
+        148
       ],
       "attackSpeed": 0.75,
-      "range": 3,
+      "range": 4,
       "startingMana": 20,
       "maxMana": 75
     },
     "ability": {
       "name": "Incendio Vortex",
-      "description": "Conjures a roaring fiery vortex over 2 tiles that scorches all enemies caught within.",
+      "description": "Conjures a roaring fiery vortex that scorches all enemies caught within.",
       "manaCost": 75,
       "damageType": "magic",
       "damageValues": [
-        230,
-        403,
-        851
+        184,
+        322,
+        681
       ],
       "targetType": "aoe",
       "radius": 2
@@ -807,12 +807,12 @@ export const UNITS: Record<string, UnitDefinition> = {
       "armor": 25,
       "magicResist": 25,
       "attackDamage": [
-        60,
-        105,
-        222
+        56,
+        101,
+        202
       ],
       "attackSpeed": 0.8,
-      "range": 4,
+      "range": 5,
       "startingMana": 0,
       "maxMana": 60
     },
@@ -820,11 +820,11 @@ export const UNITS: Record<string, UnitDefinition> = {
       "name": "Bat-Bogey Hex",
       "description": "Unleashes a swarm of flapping bat bogeys that bite and sicken the target for heavy damage.",
       "manaCost": 60,
-      "damageType": "magic",
+      "damageType": "physical",
       "damageValues": [
-        230,
-        403,
-        851
+        184,
+        322,
+        681
       ],
       "targetType": "single"
     },
@@ -850,24 +850,24 @@ export const UNITS: Record<string, UnitDefinition> = {
       "armor": 25,
       "magicResist": 25,
       "attackDamage": [
-        58,
-        102,
-        215
+        56,
+        101,
+        202
       ],
       "attackSpeed": 0.8,
-      "range": 4,
+      "range": 5,
       "startingMana": 0,
       "maxMana": 65
     },
     "ability": {
       "name": "Reducto Blast",
-      "description": "Blasts the target with concussive force, sundering 20% of their armor for 5s.",
+      "description": "Blasts the target with concussive force, sundering their armor and dealing physical damage.",
       "manaCost": 65,
       "damageType": "physical",
       "damageValues": [
-        230,
-        403,
-        851
+        184,
+        322,
+        681
       ],
       "targetType": "single"
     },
@@ -879,7 +879,8 @@ export const UNITS: Record<string, UnitDefinition> = {
     "cost": 2,
     "combatRole": "Assassin",
     "origins": [
-      "Slytherin"
+      "Slytherin",
+      "Inquisitorial Squad"
     ],
     "classes": [
       "Infiltrator"
@@ -893,9 +894,9 @@ export const UNITS: Record<string, UnitDefinition> = {
       "armor": 25,
       "magicResist": 25,
       "attackDamage": [
-        64,
-        112,
-        237
+        51,
+        90,
+        190
       ],
       "attackSpeed": 0.75,
       "range": 1,
@@ -906,11 +907,11 @@ export const UNITS: Record<string, UnitDefinition> = {
       "name": "Stinging Hex",
       "description": "Inflicts a searing hex on the target that guarantees a critical strike and slows movement.",
       "manaCost": 65,
-      "damageType": "physical",
+      "damageType": "magic",
       "damageValues": [
-        230,
-        403,
-        851
+        184,
+        322,
+        681
       ],
       "targetType": "single"
     },
@@ -936,9 +937,9 @@ export const UNITS: Record<string, UnitDefinition> = {
       "armor": 45,
       "magicResist": 45,
       "attackDamage": [
-        52,
-        91,
-        192
+        42,
+        73,
+        154
       ],
       "attackSpeed": 0.65,
       "range": 1,
@@ -947,13 +948,13 @@ export const UNITS: Record<string, UnitDefinition> = {
     },
     "ability": {
       "name": "Black Heirloom Ward",
-      "description": "Invokes ancient House of Black wards, gaining 420 shield and biting the target with malice.",
+      "description": "Invokes ancient House of Black wards, gaining a shield and dealing damage with malice.",
       "manaCost": 75,
       "damageType": "magic",
       "damageValues": [
-        210,
-        368,
-        777
+        168,
+        294,
+        622
       ],
       "targetType": "single"
     },
@@ -965,7 +966,8 @@ export const UNITS: Record<string, UnitDefinition> = {
     "cost": 2,
     "combatRole": "Caster",
     "origins": [
-      "Ravenclaw"
+      "Ravenclaw",
+      "Patil Sisters"
     ],
     "classes": [
       "Sorcerer"
@@ -979,29 +981,73 @@ export const UNITS: Record<string, UnitDefinition> = {
       "armor": 25,
       "magicResist": 35,
       "attackDamage": [
-        50,
-        88,
-        185
+        40,
+        70,
+        148
       ],
       "attackSpeed": 0.75,
-      "range": 3,
+      "range": 4,
       "startingMana": 20,
       "maxMana": 70
     },
     "ability": {
       "name": "Diffindo Crescent",
-      "description": "Fires crescent severing charms in a line, cutting through all enemy magic resistance.",
+      "description": "Fires crescent severing charms in a line, cutting through enemy magic resistance.",
       "manaCost": 70,
       "damageType": "magic",
       "damageValues": [
-        230,
-        403,
-        851
+        184,
+        322,
+        681
       ],
       "targetType": "aoe",
       "radius": 2
     },
     "color": "#1e40af"
+  },
+  "parvati_patil": {
+    "id": "parvati_patil",
+    "name": "Parvati Patil",
+    "cost": 2,
+    "combatRole": "Marksman",
+    "origins": [
+      "Gryffindor",
+      "Patil Sisters"
+    ],
+    "classes": [
+      "Sniper"
+    ],
+    "stats": {
+      "hp": [
+        620,
+        1116,
+        2232
+      ],
+      "armor": 25,
+      "magicResist": 25,
+      "attackDamage": [
+        56,
+        101,
+        202
+      ],
+      "attackSpeed": 0.75,
+      "range": 5,
+      "startingMana": 20,
+      "maxMana": 70
+    },
+    "ability": {
+      "name": "Incendio Barrage",
+      "description": "Fires explosive flaming arrows that burst upon impact, dealing physical damage to the target.",
+      "manaCost": 70,
+      "damageType": "physical",
+      "damageValues": [
+        184,
+        322,
+        681
+      ],
+      "targetType": "single"
+    },
+    "color": "#ae0001"
   },
   "cedric_diggory": {
     "id": "cedric_diggory",
@@ -1023,9 +1069,9 @@ export const UNITS: Record<string, UnitDefinition> = {
       "armor": 45,
       "magicResist": 40,
       "attackDamage": [
-        55,
-        96,
-        204
+        44,
+        77,
+        163
       ],
       "attackSpeed": 0.65,
       "range": 1,
@@ -1034,13 +1080,13 @@ export const UNITS: Record<string, UnitDefinition> = {
     },
     "ability": {
       "name": "Triwizard Aegis Ward",
-      "description": "Raises an impervious protective barrier, granting 450 HP shield to himself and adjacent allies.",
+      "description": "Raises an impervious protective barrier, granting a shield to himself and adjacent allies.",
       "manaCost": 90,
-      "damageType": "magic",
+      "damageType": "physical",
       "damageValues": [
-        200,
-        350,
-        740
+        160,
+        280,
+        592
       ],
       "targetType": "allies"
     },
@@ -1048,7 +1094,7 @@ export const UNITS: Record<string, UnitDefinition> = {
   },
   "professor_sprout": {
     "id": "professor_sprout",
-    "name": "Professor Sprout",
+    "name": "Pomona Sprout",
     "cost": 2,
     "combatRole": "Caster",
     "origins": [
@@ -1067,9 +1113,9 @@ export const UNITS: Record<string, UnitDefinition> = {
       "armor": 30,
       "magicResist": 35,
       "attackDamage": [
-        50,
-        88,
-        185
+        40,
+        70,
+        148
       ],
       "attackSpeed": 0.7,
       "range": 3,
@@ -1078,13 +1124,13 @@ export const UNITS: Record<string, UnitDefinition> = {
     },
     "ability": {
       "name": "Venomous Tentacula Root",
-      "description": "Entangles enemies in living vines, healing allies for 300 HP and rooting enemies for 1.5s.",
+      "description": "Entangles enemies in living vines, healing nearby allies and rooting enemies.",
       "manaCost": 75,
       "damageType": "magic",
       "damageValues": [
-        230,
-        403,
-        851
+        184,
+        322,
+        681
       ],
       "targetType": "lowest_hp"
     },
@@ -1111,9 +1157,9 @@ export const UNITS: Record<string, UnitDefinition> = {
       "armor": 45,
       "magicResist": 45,
       "attackDamage": [
-        50,
-        88,
-        185
+        40,
+        70,
+        148
       ],
       "attackSpeed": 0.65,
       "range": 1,
@@ -1122,13 +1168,13 @@ export const UNITS: Record<string, UnitDefinition> = {
     },
     "ability": {
       "name": "Head Toss Taunt",
-      "description": "Flips his nearly severed head, taunting surrounding enemies and gaining 400 shield.",
+      "description": "Flips his nearly severed head, taunting surrounding enemies and gaining a shield.",
       "manaCost": 80,
       "damageType": "magic",
       "damageValues": [
-        180,
-        315,
-        666
+        144,
+        252,
+        533
       ],
       "targetType": "aoe",
       "radius": 2
@@ -1155,9 +1201,9 @@ export const UNITS: Record<string, UnitDefinition> = {
       "armor": 35,
       "magicResist": 30,
       "attackDamage": [
-        62,
-        109,
-        229
+        50,
+        87,
+        183
       ],
       "attackSpeed": 0.8,
       "range": 1,
@@ -1166,13 +1212,13 @@ export const UNITS: Record<string, UnitDefinition> = {
     },
     "ability": {
       "name": "Seeker's Dive Strike",
-      "description": "Dives with supersonic speed into the target, striking with fierce physical power and surging with AS.",
+      "description": "Dives with supersonic speed into the target, striking with fierce physical power and surging with Attack Speed.",
       "manaCost": 60,
       "damageType": "physical",
       "damageValues": [
-        230,
-        403,
-        851
+        184,
+        322,
+        681
       ],
       "targetType": "single"
     },
@@ -1198,9 +1244,9 @@ export const UNITS: Record<string, UnitDefinition> = {
       "armor": 25,
       "magicResist": 35,
       "attackDamage": [
-        50,
-        88,
-        185
+        40,
+        70,
+        148
       ],
       "attackSpeed": 0.75,
       "range": 3,
@@ -1213,9 +1259,9 @@ export const UNITS: Record<string, UnitDefinition> = {
       "manaCost": 70,
       "damageType": "magic",
       "damageValues": [
-        230,
-        403,
-        851
+        184,
+        322,
+        681
       ],
       "targetType": "aoe",
       "radius": 2
@@ -1242,12 +1288,12 @@ export const UNITS: Record<string, UnitDefinition> = {
       "armor": 30,
       "magicResist": 30,
       "attackDamage": [
-        64,
-        112,
-        237
+        58,
+        104,
+        209
       ],
       "attackSpeed": 0.8,
-      "range": 4,
+      "range": 5,
       "startingMana": 10,
       "maxMana": 60
     },
@@ -1257,9 +1303,9 @@ export const UNITS: Record<string, UnitDefinition> = {
       "manaCost": 60,
       "damageType": "physical",
       "damageValues": [
-        230,
-        403,
-        851
+        184,
+        322,
+        681
       ],
       "targetType": "single"
     },
@@ -1286,12 +1332,12 @@ export const UNITS: Record<string, UnitDefinition> = {
       "armor": 30,
       "magicResist": 35,
       "attackDamage": [
-        60,
-        135,
-        234
+        48,
+        108,
+        187
       ],
       "attackSpeed": 0.8,
-      "range": 3,
+      "range": 4,
       "startingMana": 25,
       "maxMana": 75
     },
@@ -1301,9 +1347,9 @@ export const UNITS: Record<string, UnitDefinition> = {
       "manaCost": 75,
       "damageType": "magic",
       "damageValues": [
-        290,
-        653,
-        1131
+        232,
+        522,
+        905
       ],
       "targetType": "aoe",
       "radius": 3
@@ -1331,24 +1377,24 @@ export const UNITS: Record<string, UnitDefinition> = {
       "armor": 30,
       "magicResist": 30,
       "attackDamage": [
-        68,
-        153,
-        265
+        54,
+        122,
+        212
       ],
       "attackSpeed": 0.8,
-      "range": 3,
+      "range": 4,
       "startingMana": 10,
       "maxMana": 60
     },
     "ability": {
       "name": "Decoy Detonator Barrage",
-      "description": "Tosses a cluster of exploding prank detonators that bounce and explode in a 2-hex radius.",
+      "description": "Tosses a cluster of exploding prank detonators that bounce and explode in an area.",
       "manaCost": 60,
       "damageType": "physical",
       "damageValues": [
-        290,
-        653,
-        1131
+        232,
+        522,
+        905
       ],
       "targetType": "aoe",
       "radius": 2
@@ -1376,9 +1422,9 @@ export const UNITS: Record<string, UnitDefinition> = {
       "armor": 35,
       "magicResist": 40,
       "attackDamage": [
-        55,
-        99,
-        198
+        44,
+        79,
+        158
       ],
       "attackSpeed": 0.75,
       "range": 3,
@@ -1387,13 +1433,13 @@ export const UNITS: Record<string, UnitDefinition> = {
     },
     "ability": {
       "name": "Unbreakable Maternal Aegis",
-      "description": "Pledges protection over her kin, granting the closest ally a 400 HP shield and charming the farthest enemy for 2.0s.",
+      "description": "Pledges protection over her kin, granting the closest ally a shield and charming the farthest enemy.",
       "manaCost": 70,
       "damageType": "magic",
       "damageValues": [
-        200,
-        360,
-        720
+        160,
+        288,
+        576
       ],
       "targetType": "lowest_hp"
     },
@@ -1421,9 +1467,9 @@ export const UNITS: Record<string, UnitDefinition> = {
       "armor": 35,
       "magicResist": 35,
       "attackDamage": [
-        75,
-        169,
-        293
+        60,
+        135,
+        234
       ],
       "attackSpeed": 0.85,
       "range": 1,
@@ -1432,13 +1478,13 @@ export const UNITS: Record<string, UnitDefinition> = {
     },
     "ability": {
       "name": "Padfoot Shadow Pounce",
-      "description": "Leaps from shadows in grim animagus form, tearing into the lowest-health enemy with high crit.",
+      "description": "Leaps from shadows in grim animagus form, tearing into the lowest-health enemy with high critical damage.",
       "manaCost": 60,
       "damageType": "physical",
       "damageValues": [
-        290,
-        653,
-        1131
+        232,
+        522,
+        905
       ],
       "targetType": "lowest_hp"
     },
@@ -1466,9 +1512,9 @@ export const UNITS: Record<string, UnitDefinition> = {
       "armor": 30,
       "magicResist": 30,
       "attackDamage": [
-        75,
-        169,
-        293
+        60,
+        135,
+        234
       ],
       "attackSpeed": 0.85,
       "range": 1,
@@ -1481,9 +1527,9 @@ export const UNITS: Record<string, UnitDefinition> = {
       "manaCost": 65,
       "damageType": "true",
       "damageValues": [
-        290,
-        653,
-        1131
+        232,
+        522,
+        905
       ],
       "targetType": "single"
     },
@@ -1510,9 +1556,9 @@ export const UNITS: Record<string, UnitDefinition> = {
       "armor": 35,
       "magicResist": 45,
       "attackDamage": [
-        60,
-        135,
-        234
+        48,
+        108,
+        187
       ],
       "attackSpeed": 0.7,
       "range": 3,
@@ -1521,13 +1567,13 @@ export const UNITS: Record<string, UnitDefinition> = {
     },
     "ability": {
       "name": "Felix Felicis Draught",
-      "description": "Tosses a golden vial of liquid luck, granting +35% Crit Chance & +40 AP to 2 strongest allies.",
+      "description": "Tosses a golden vial of liquid luck, granting bonus Crit Chance and Ability Power to strongest allies.",
       "manaCost": 80,
       "damageType": "magic",
       "damageValues": [
-        290,
-        653,
-        1131
+        232,
+        522,
+        905
       ],
       "targetType": "allies"
     },
@@ -1555,24 +1601,24 @@ export const UNITS: Record<string, UnitDefinition> = {
       "armor": 30,
       "magicResist": 40,
       "attackDamage": [
-        60,
-        135,
-        234
+        48,
+        108,
+        187
       ],
       "attackSpeed": 0.85,
-      "range": 3,
+      "range": 4,
       "startingMana": 20,
       "maxMana": 70
     },
     "ability": {
       "name": "Wingardium Leviosa Flurry",
-      "description": "Lifts 2 front enemies into the air, disabling them for 2s before slamming them down.",
+      "description": "Lifts frontline enemies into the air, disabling them before slamming them down.",
       "manaCost": 70,
       "damageType": "magic",
       "damageValues": [
-        290,
-        653,
-        1131
+        232,
+        522,
+        905
       ],
       "targetType": "aoe",
       "radius": 2
@@ -1600,24 +1646,24 @@ export const UNITS: Record<string, UnitDefinition> = {
       "armor": 35,
       "magicResist": 45,
       "attackDamage": [
-        60,
-        135,
-        234
+        48,
+        108,
+        187
       ],
       "attackSpeed": 0.75,
-      "range": 3,
+      "range": 4,
       "startingMana": 30,
       "maxMana": 75
     },
     "ability": {
       "name": "Spectral Diadem Radiance",
-      "description": "Unleashes ethereal spirit light, granting all allies +25 Mana and dealing magic damage.",
+      "description": "Unleashes ethereal spirit light, granting all allies bonus Mana and dealing magic damage.",
       "manaCost": 75,
       "damageType": "magic",
       "damageValues": [
-        290,
-        653,
-        1131
+        232,
+        522,
+        905
       ],
       "targetType": "aoe",
       "radius": 2
@@ -1645,9 +1691,9 @@ export const UNITS: Record<string, UnitDefinition> = {
       "armor": 40,
       "magicResist": 35,
       "attackDamage": [
-        72,
-        162,
-        281
+        58,
+        130,
+        225
       ],
       "attackSpeed": 0.75,
       "range": 1,
@@ -1656,13 +1702,13 @@ export const UNITS: Record<string, UnitDefinition> = {
     },
     "ability": {
       "name": "Moony's Feral Swipe",
-      "description": "Transforms and slashes with werewolf claws, dealing physical damage and healing for 50% damage dealt.",
+      "description": "Transforms and slashes with werewolf claws, dealing physical damage and healing based on damage dealt.",
       "manaCost": 70,
       "damageType": "physical",
       "damageValues": [
-        290,
-        653,
-        1131
+        232,
+        522,
+        905
       ],
       "targetType": "single"
     },
@@ -1690,9 +1736,9 @@ export const UNITS: Record<string, UnitDefinition> = {
       "armor": 35,
       "magicResist": 35,
       "attackDamage": [
-        66,
-        149,
-        257
+        53,
+        119,
+        206
       ],
       "attackSpeed": 0.8,
       "range": 2,
@@ -1701,13 +1747,13 @@ export const UNITS: Record<string, UnitDefinition> = {
     },
     "ability": {
       "name": "Metamorph Surge",
-      "description": "Rapidly morphs combat forms, striking the enemy for magic damage and granting herself +35% Attack Speed (stacking for the rest of combat).",
+      "description": "Rapidly morphs combat forms, striking the enemy for magic damage and surging with stacking Attack Speed.",
       "manaCost": 50,
       "damageType": "magic",
       "damageValues": [
-        260,
-        585,
-        1014
+        208,
+        468,
+        811
       ],
       "targetType": "single"
     },
@@ -1734,9 +1780,9 @@ export const UNITS: Record<string, UnitDefinition> = {
       "armor": 40,
       "magicResist": 45,
       "attackDamage": [
-        60,
-        135,
-        234
+        48,
+        108,
+        187
       ],
       "attackSpeed": 0.65,
       "range": 2,
@@ -1745,13 +1791,13 @@ export const UNITS: Record<string, UnitDefinition> = {
     },
     "ability": {
       "name": "Jovial Feast Blessing",
-      "description": "Bestows a spectral feast that cleanses status effects and heals the 3 lowest HP allies for 380 HP.",
+      "description": "Bestows a spectral feast that cleanses status effects and heals the lowest HP allies.",
       "manaCost": 80,
-      "damageType": "magic",
+      "damageType": "physical",
       "damageValues": [
-        290,
-        653,
-        1131
+        232,
+        522,
+        905
       ],
       "targetType": "allies"
     },
@@ -1778,24 +1824,24 @@ export const UNITS: Record<string, UnitDefinition> = {
       "armor": 30,
       "magicResist": 40,
       "attackDamage": [
-        60,
-        135,
-        234
+        48,
+        108,
+        187
       ],
       "attackSpeed": 0.75,
-      "range": 3,
+      "range": 4,
       "startingMana": 25,
       "maxMana": 75
     },
     "ability": {
       "name": "Curse of the Dark North",
-      "description": "Freezes target in black ice, dealing heavy magic damage and chilling attack speed by 50%.",
+      "description": "Freezes target in black ice, dealing heavy magic damage and chilling their attack speed.",
       "manaCost": 75,
       "damageType": "magic",
       "damageValues": [
-        290,
-        653,
-        1131
+        232,
+        522,
+        905
       ],
       "targetType": "single"
     },
@@ -1822,9 +1868,9 @@ export const UNITS: Record<string, UnitDefinition> = {
       "armor": 50,
       "magicResist": 45,
       "attackDamage": [
-        70,
-        158,
-        273
+        56,
+        126,
+        218
       ],
       "attackSpeed": 0.65,
       "range": 1,
@@ -1837,9 +1883,9 @@ export const UNITS: Record<string, UnitDefinition> = {
       "manaCost": 90,
       "damageType": "physical",
       "damageValues": [
-        290,
-        653,
-        1131
+        232,
+        522,
+        905
       ],
       "targetType": "single"
     },
@@ -1865,9 +1911,9 @@ export const UNITS: Record<string, UnitDefinition> = {
       "armor": 45,
       "magicResist": 40,
       "attackDamage": [
-        75,
-        169,
-        293
+        60,
+        135,
+        234
       ],
       "attackSpeed": 0.8,
       "range": 1,
@@ -1880,9 +1926,9 @@ export const UNITS: Record<string, UnitDefinition> = {
       "manaCost": 70,
       "damageType": "physical",
       "damageValues": [
-        290,
-        653,
-        1131
+        232,
+        522,
+        905
       ],
       "targetType": "aoe",
       "radius": 2
@@ -1911,24 +1957,24 @@ export const UNITS: Record<string, UnitDefinition> = {
       "armor": 40,
       "magicResist": 45,
       "attackDamage": [
-        92,
-        166,
-        350
+        74,
+        133,
+        280
       ],
       "attackSpeed": 0.8,
-      "range": 3,
+      "range": 4,
       "startingMana": 30,
       "maxMana": 90
     },
     "ability": {
       "name": "Piertotum Locomotor",
-      "description": "Animates the Hogwarts stone suits of armor, crushing the frontline for AoE damage and a 2s stun.",
+      "description": "Animates the Hogwarts stone suits of armor, crushing enemies for AoE damage and a stun.",
       "manaCost": 90,
       "damageType": "magic",
       "damageValues": [
-        350,
-        630,
-        1330
+        280,
+        504,
+        1064
       ],
       "targetType": "aoe",
       "radius": 3
@@ -1957,12 +2003,12 @@ export const UNITS: Record<string, UnitDefinition> = {
       "armor": 35,
       "magicResist": 45,
       "attackDamage": [
-        92,
-        166,
-        350
+        74,
+        133,
+        280
       ],
       "attackSpeed": 0.8,
-      "range": 3,
+      "range": 4,
       "startingMana": 25,
       "maxMana": 80
     },
@@ -1972,9 +2018,9 @@ export const UNITS: Record<string, UnitDefinition> = {
       "manaCost": 80,
       "damageType": "magic",
       "damageValues": [
-        350,
-        630,
-        1330
+        280,
+        504,
+        1064
       ],
       "targetType": "single"
     },
@@ -2003,24 +2049,24 @@ export const UNITS: Record<string, UnitDefinition> = {
       "armor": 35,
       "magicResist": 40,
       "attackDamage": [
-        92,
-        166,
-        350
+        74,
+        133,
+        280
       ],
       "attackSpeed": 0.8,
-      "range": 3,
+      "range": 4,
       "startingMana": 20,
       "maxMana": 75
     },
     "ability": {
       "name": "Imperio Green Beam",
-      "description": "Channels the Imperius Curse, turning the highest AD enemy against their allies for 3.0s.",
+      "description": "Channels the Imperius Curse, turning the highest AD enemy against their allies.",
       "manaCost": 75,
       "damageType": "magic",
       "damageValues": [
-        350,
-        630,
-        1330
+        280,
+        504,
+        1064
       ],
       "targetType": "single"
     },
@@ -2048,24 +2094,24 @@ export const UNITS: Record<string, UnitDefinition> = {
       "armor": 40,
       "magicResist": 40,
       "attackDamage": [
-        85,
-        153,
-        323
+        68,
+        122,
+        258
       ],
       "attackSpeed": 0.8,
-      "range": 3,
+      "range": 4,
       "startingMana": 30,
       "maxMana": 80
     },
     "ability": {
       "name": "Maternal Reductor Blast",
-      "description": "Unleashes fierce protective wrath, blasting enemies in a 2-hex radius for heavy magic damage and granting the lowest HP ally a 450 HP shield.",
+      "description": "Unleashes fierce protective wrath, blasting enemies in an area for heavy magic damage and granting the lowest HP ally a shield.",
       "manaCost": 80,
       "damageType": "magic",
       "damageValues": [
-        360,
-        648,
-        1368
+        288,
+        518,
+        1094
       ],
       "targetType": "aoeAll",
       "radius": 2
@@ -2093,9 +2139,9 @@ export const UNITS: Record<string, UnitDefinition> = {
       "armor": 40,
       "magicResist": 40,
       "attackDamage": [
-        92,
-        166,
-        350
+        74,
+        133,
+        280
       ],
       "attackSpeed": 0.85,
       "range": 1,
@@ -2108,9 +2154,9 @@ export const UNITS: Record<string, UnitDefinition> = {
       "manaCost": 60,
       "damageType": "true",
       "damageValues": [
-        350,
-        630,
-        1330
+        280,
+        504,
+        1064
       ],
       "targetType": "aoe",
       "radius": 2
@@ -2138,24 +2184,24 @@ export const UNITS: Record<string, UnitDefinition> = {
       "armor": 30,
       "magicResist": 50,
       "attackDamage": [
-        92,
-        166,
-        350
+        74,
+        133,
+        280
       ],
       "attackSpeed": 0.75,
-      "range": 3,
+      "range": 4,
       "startingMana": 30,
       "maxMana": 80
     },
     "ability": {
       "name": "Grim Prophecy Orb",
-      "description": "Shatters a mystical prophecy orb, granting all allies +45% Dodge and dealing AoE magic damage.",
+      "description": "Shatters a mystical prophecy orb, granting allies bonus Dodge and dealing AoE magic damage.",
       "manaCost": 80,
       "damageType": "magic",
       "damageValues": [
-        350,
-        630,
-        1330
+        280,
+        504,
+        1064
       ],
       "targetType": "aoe",
       "radius": 3
@@ -2183,12 +2229,12 @@ export const UNITS: Record<string, UnitDefinition> = {
       "armor": 35,
       "magicResist": 40,
       "attackDamage": [
-        92,
-        166,
-        350
+        74,
+        133,
+        280
       ],
       "attackSpeed": 0.8,
-      "range": 3,
+      "range": 4,
       "startingMana": 30,
       "maxMana": 80
     },
@@ -2198,9 +2244,9 @@ export const UNITS: Record<string, UnitDefinition> = {
       "manaCost": 80,
       "damageType": "physical",
       "damageValues": [
-        350,
-        630,
-        1330
+        280,
+        504,
+        1064
       ],
       "targetType": "aoe",
       "radius": 3
@@ -2228,9 +2274,9 @@ export const UNITS: Record<string, UnitDefinition> = {
       "armor": 55,
       "magicResist": 50,
       "attackDamage": [
-        92,
-        166,
-        350
+        74,
+        133,
+        280
       ],
       "attackSpeed": 0.7,
       "range": 2,
@@ -2239,13 +2285,13 @@ export const UNITS: Record<string, UnitDefinition> = {
     },
     "ability": {
       "name": "Constant Vigilance Ward",
-      "description": "Erects an unbreakable auror barrier, gaining 600 shield and reflecting 30% damage back to attackers.",
+      "description": "Erects an unbreakable auror barrier, gaining a massive shield and reflecting damage back to attackers.",
       "manaCost": 85,
-      "damageType": "magic",
+      "damageType": "physical",
       "damageValues": [
-        350,
-        630,
-        1330
+        280,
+        504,
+        1064
       ],
       "targetType": "self"
     },
@@ -2272,12 +2318,12 @@ export const UNITS: Record<string, UnitDefinition> = {
       "armor": 35,
       "magicResist": 45,
       "attackDamage": [
-        92,
-        166,
-        350
+        74,
+        133,
+        280
       ],
       "attackSpeed": 0.85,
-      "range": 3,
+      "range": 4,
       "startingMana": 25,
       "maxMana": 80
     },
@@ -2287,9 +2333,9 @@ export const UNITS: Record<string, UnitDefinition> = {
       "manaCost": 80,
       "damageType": "magic",
       "damageValues": [
-        350,
-        630,
-        1330
+        280,
+        504,
+        1064
       ],
       "targetType": "aoe",
       "radius": 3
@@ -2317,9 +2363,9 @@ export const UNITS: Record<string, UnitDefinition> = {
       "armor": 55,
       "magicResist": 50,
       "attackDamage": [
-        92,
-        166,
-        350
+        74,
+        133,
+        280
       ],
       "attackSpeed": 0.65,
       "range": 1,
@@ -2328,13 +2374,13 @@ export const UNITS: Record<string, UnitDefinition> = {
     },
     "ability": {
       "name": "Giantess Ground Stomp",
-      "description": "Stomps with half-giant force, stunning adjacent foes for 2s and gaining 500 shield.",
+      "description": "Stomps with half-giant force, stunning adjacent foes and gaining a shield.",
       "manaCost": 85,
       "damageType": "physical",
       "damageValues": [
-        350,
-        630,
-        1330
+        280,
+        504,
+        1064
       ],
       "targetType": "aoe",
       "radius": 2
@@ -2362,9 +2408,9 @@ export const UNITS: Record<string, UnitDefinition> = {
       "armor": 35,
       "magicResist": 40,
       "attackDamage": [
-        92,
-        166,
-        350
+        74,
+        133,
+        280
       ],
       "attackSpeed": 0.85,
       "range": 1,
@@ -2377,9 +2423,9 @@ export const UNITS: Record<string, UnitDefinition> = {
       "manaCost": 60,
       "damageType": "physical",
       "damageValues": [
-        350,
-        630,
-        1330
+        280,
+        504,
+        1064
       ],
       "targetType": "single"
     },
@@ -2406,9 +2452,9 @@ export const UNITS: Record<string, UnitDefinition> = {
       "armor": 65,
       "magicResist": 60,
       "attackDamage": [
-        82,
-        144,
-        344
+        66,
+        115,
+        275
       ],
       "attackSpeed": 0.8,
       "range": 1,
@@ -2417,13 +2463,13 @@ export const UNITS: Record<string, UnitDefinition> = {
     },
     "ability": {
       "name": "Sword of Gryffindor Wrath",
-      "description": "Swings the legendary ruby sword with heroic might, cleaving the entire frontline and granting team armor.",
+      "description": "Swings the ruby sword with heroic might, cleaving the entire frontline and granting team armor.",
       "manaCost": 85,
       "damageType": "physical",
       "damageValues": [
-        300,
-        528,
-        1500
+        240,
+        422,
+        1200
       ],
       "targetType": "aoe",
       "radius": 3
@@ -2452,24 +2498,24 @@ export const UNITS: Record<string, UnitDefinition> = {
       "armor": 50,
       "magicResist": 60,
       "attackDamage": [
-        82,
-        144,
-        344
+        66,
+        115,
+        275
       ],
       "attackSpeed": 0.85,
-      "range": 3,
+      "range": 4,
       "startingMana": 30,
       "maxMana": 90
     },
     "ability": {
       "name": "Basilisk Roar & Petrify",
-      "description": "Unleashes the King of Serpents, dealing mapwide magic damage and petrifying/stunning for 2.5s.",
+      "description": "Unleashes the King of Serpents, dealing mapwide magic damage and petrifying enemies.",
       "manaCost": 90,
       "damageType": "magic",
       "damageValues": [
-        300,
-        528,
-        1500
+        240,
+        422,
+        1200
       ],
       "targetType": "aoe",
       "radius": 4
@@ -2497,9 +2543,9 @@ export const UNITS: Record<string, UnitDefinition> = {
       "armor": 45,
       "magicResist": 60,
       "attackDamage": [
-        82,
-        144,
-        344
+        66,
+        115,
+        275
       ],
       "attackSpeed": 0.9,
       "range": 4,
@@ -2508,13 +2554,13 @@ export const UNITS: Record<string, UnitDefinition> = {
     },
     "ability": {
       "name": "Diadem of Infinite Wisdom",
-      "description": "Channels infinite arcane brilliance, striking all enemies for magic damage and granting allies +50 Mana.",
+      "description": "Channels infinite arcane brilliance, striking all enemies for magic damage and granting allies bonus Mana.",
       "manaCost": 90,
       "damageType": "magic",
       "damageValues": [
-        300,
-        528,
-        1500
+        240,
+        422,
+        1200
       ],
       "targetType": "aoe",
       "radius": 4
@@ -2542,9 +2588,9 @@ export const UNITS: Record<string, UnitDefinition> = {
       "armor": 55,
       "magicResist": 60,
       "attackDamage": [
-        82,
-        144,
-        344
+        66,
+        115,
+        275
       ],
       "attackSpeed": 0.8,
       "range": 3,
@@ -2553,13 +2599,13 @@ export const UNITS: Record<string, UnitDefinition> = {
     },
     "ability": {
       "name": "Cup of Eternal Abundance",
-      "description": "Pours golden restorative ambrosia that fully heals the team and grants +50 Armor and MR for 8s.",
+      "description": "Pours golden restorative ambrosia that heals the team and grants bonus Armor and Magic Resist.",
       "manaCost": 85,
-      "damageType": "magic",
+      "damageType": "physical",
       "damageValues": [
-        300,
-        528,
-        1500
+        240,
+        422,
+        1200
       ],
       "targetType": "allies"
     },
@@ -2587,9 +2633,9 @@ export const UNITS: Record<string, UnitDefinition> = {
       "armor": 45,
       "magicResist": 55,
       "attackDamage": [
-        82,
-        144,
-        344
+        66,
+        115,
+        275
       ],
       "attackSpeed": 0.85,
       "range": 4,
@@ -2602,9 +2648,9 @@ export const UNITS: Record<string, UnitDefinition> = {
       "manaCost": 100,
       "damageType": "magic",
       "damageValues": [
-        300,
-        528,
-        1500
+        240,
+        422,
+        1200
       ],
       "targetType": "aoe",
       "radius": 4
@@ -2634,12 +2680,12 @@ export const UNITS: Record<string, UnitDefinition> = {
       "armor": 40,
       "magicResist": 50,
       "attackDamage": [
-        82,
-        144,
-        344
+        66,
+        115,
+        275
       ],
       "attackSpeed": 0.9,
-      "range": 3,
+      "range": 4,
       "startingMana": 30,
       "maxMana": 90
     },
@@ -2649,9 +2695,9 @@ export const UNITS: Record<string, UnitDefinition> = {
       "manaCost": 90,
       "damageType": "true",
       "damageValues": [
-        300,
-        528,
-        1500
+        240,
+        422,
+        1200
       ],
       "targetType": "single"
     },
@@ -2678,24 +2724,24 @@ export const UNITS: Record<string, UnitDefinition> = {
       "armor": 45,
       "magicResist": 55,
       "attackDamage": [
-        82,
-        144,
-        344
+        66,
+        115,
+        275
       ],
       "attackSpeed": 0.85,
-      "range": 3,
+      "range": 4,
       "startingMana": 40,
       "maxMana": 90
     },
     "ability": {
       "name": "Phoenix Rebirth & Tears",
-      "description": "Erupts into brilliant golden flames, healing all allies for 600 HP and reviving the first fallen ally.",
+      "description": "Erupts into brilliant golden flames, healing all allies and reviving the first fallen ally.",
       "manaCost": 90,
       "damageType": "magic",
       "damageValues": [
-        300,
-        528,
-        1500
+        240,
+        422,
+        1200
       ],
       "targetType": "allies"
     },
@@ -2722,9 +2768,9 @@ export const UNITS: Record<string, UnitDefinition> = {
       "armor": 60,
       "magicResist": 55,
       "attackDamage": [
-        82,
-        144,
-        344
+        66,
+        115,
+        275
       ],
       "attackSpeed": 0.75,
       "range": 2,
@@ -2733,13 +2779,13 @@ export const UNITS: Record<string, UnitDefinition> = {
     },
     "ability": {
       "name": "Infernal Dragonfire Cone",
-      "description": "Breaths a 3-tile wide cone of incinerating dragon fire, dealing continuous magic burn damage.",
+      "description": "Breaths a wide cone of incinerating dragon fire, dealing continuous magic burn damage.",
       "manaCost": 90,
       "damageType": "magic",
       "damageValues": [
-        300,
-        528,
-        1500
+        240,
+        422,
+        1200
       ],
       "targetType": "aoe",
       "radius": 3
@@ -2766,9 +2812,9 @@ export const UNITS: Record<string, UnitDefinition> = {
       "armor": 5,
       "magicResist": 5,
       "attackDamage": [
-        18,
-        32,
-        58
+        14,
+        26,
+        46
       ],
       "attackSpeed": 0.65,
       "range": 2,
@@ -2781,9 +2827,9 @@ export const UNITS: Record<string, UnitDefinition> = {
       "manaCost": 60,
       "damageType": "magic",
       "damageValues": [
-        60,
-        100,
-        180
+        48,
+        80,
+        144
       ],
       "targetType": "single"
     },
@@ -2809,9 +2855,9 @@ export const UNITS: Record<string, UnitDefinition> = {
       "armor": 5,
       "magicResist": 5,
       "attackDamage": [
-        20,
-        36,
-        65
+        16,
+        29,
+        52
       ],
       "attackSpeed": 0.65,
       "range": 1,
@@ -2824,9 +2870,9 @@ export const UNITS: Record<string, UnitDefinition> = {
       "manaCost": 70,
       "damageType": "physical",
       "damageValues": [
-        60,
-        110,
-        200
+        48,
+        88,
+        160
       ],
       "targetType": "single"
     },
@@ -2852,9 +2898,9 @@ export const UNITS: Record<string, UnitDefinition> = {
       "armor": 15,
       "magicResist": 15,
       "attackDamage": [
-        35,
-        63,
-        113
+        28,
+        50,
+        90
       ],
       "attackSpeed": 0.75,
       "range": 1,
@@ -2867,13 +2913,101 @@ export const UNITS: Record<string, UnitDefinition> = {
       "manaCost": 60,
       "damageType": "magic",
       "damageValues": [
-        120,
-        220,
-        400
+        96,
+        176,
+        320
       ],
       "targetType": "single"
     },
     "color": "#1c1917"
+  },
+  "argus_filch": {
+    "id": "argus_filch",
+    "name": "Argus Filch",
+    "cost": 1,
+    "combatRole": "Tank",
+    "origins": [
+      "Inquisitorial Squad"
+    ],
+    "classes": [
+      "Guardian"
+    ],
+    "stats": {
+      "hp": [
+        580,
+        1044,
+        2088
+      ],
+      "armor": 30,
+      "magicResist": 25,
+      "attackDamage": [
+        32,
+        58,
+        115
+      ],
+      "attackSpeed": 0.6,
+      "range": 1,
+      "startingMana": 0,
+      "maxMana": 80
+    },
+    "ability": {
+      "name": "Mrs. Norris Prowl & Shackle",
+      "description": "Sends Mrs. Norris to corner and shackle the target, stunning them with physical damage.",
+      "manaCost": 80,
+      "damageType": "physical",
+      "damageValues": [
+        60,
+        108,
+        216
+      ],
+      "targetType": "single"
+    },
+    "color": "#78350f"
+  },
+  "dolores_umbridge": {
+    "id": "dolores_umbridge",
+    "name": "Dolores Umbridge",
+    "cost": 4,
+    "combatRole": "Caster",
+    "origins": [
+      "Ministry",
+      "Inquisitorial Squad"
+    ],
+    "classes": [
+      "Sorcerer"
+    ],
+    "stats": {
+      "hp": [
+        1200,
+        2160,
+        4560
+      ],
+      "armor": 35,
+      "magicResist": 45,
+      "attackDamage": [
+        74,
+        133,
+        280
+      ],
+      "attackSpeed": 0.8,
+      "range": 4,
+      "startingMana": 30,
+      "maxMana": 85
+    },
+    "ability": {
+      "name": "Educational Decree #137",
+      "description": "Enforces strict disciplinary order, silencing and disarming high-threat enemies and dealing magic damage.",
+      "manaCost": 85,
+      "damageType": "magic",
+      "damageValues": [
+        280,
+        504,
+        1064
+      ],
+      "targetType": "aoe",
+      "radius": 3
+    },
+    "color": "#ec4899"
   }
 };
 

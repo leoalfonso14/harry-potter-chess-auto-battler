@@ -2,48 +2,49 @@ export type StarLevel = 1 | 2 | 3;
 export type UnitCost = 1 | 2 | 3 | 4 | 5;
 
 export type Origin =
-  | 'Gryffindor'
-  | 'Slytherin'
-  | 'Ravenclaw'
-  | 'Hufflepuff'
-  | 'Order of Phoenix'
-  | 'Death Eater'
-  | 'Ghost'
-  | 'Magical Creature'
-  | 'Ministry'
-  | 'Professor'
-  | 'Magizoologist'
-  | 'House-Elf'
-  | 'Dark Wizard'
-  | 'Beauxbatons'
-  | 'Durmstrang'
-  | 'Divine'
-  | 'Wild'
-  | 'Dragon'
-  | 'Golden Trio'
-  | 'Slytherin Trio'
-  | 'Weasley'
-  | 'Malfoy';
+  | "Gryffindor"
+  | "Slytherin"
+  | "Ravenclaw"
+  | "Hufflepuff"
+  | "Order of Phoenix"
+  | "Death Eater"
+  | "Ghost"
+  | "Magical Creature"
+  | "Ministry"
+  | "Professor"
+  | "Magizoologist"
+  | "House-Elf"
+  | "Dark Wizard"
+  | "Beauxbatons"
+  | "Durmstrang"
+  | "Divine"
+  | "Wild"
+  | "Dragon"
+  | "Golden Trio"
+  | "Inquisitorial Squad"
+  | "Weasley"
+  | "Malfoy"
+  | "Patil Sisters";
 
 export type CombatRole =
-  | 'Tank'
-  | 'Fighter'
-  | 'Caster'
-  | 'Marksman'
-  | 'Assassin'
-  | 'Specialist';
+  | "Tank"
+  | "Fighter"
+  | "Caster"
+  | "Marksman"
+  | "Assassin"
+  | "Specialist";
 
 export type Class =
-  | 'Guardian'
-  | 'Sorcerer'
-  | 'Sniper'
-  | 'Brawler'
-  | 'Infiltrator'
-  | 'Mystic'
-  | 'Duelist'
-  | 'Trickster'
-  | 'Animagi'
-  | 'Handler';
+  | "Guardian"
+  | "Sorcerer"
+  | "Sniper"
+  | "Brawler"
+  | "Infiltrator"
+  | "Mystic"
+  | "Duelist"
+  | "Trickster"
+  | "Animagi"
+  | "Handler";
 
 export interface UnitStats {
   hp: [number, number, number]; // [1-star, 2-star, 3-star]
@@ -51,26 +52,26 @@ export interface UnitStats {
   magicResist: number;
   attackDamage: [number, number, number];
   attackSpeed: number; // Attacks per second
-  range: number;       // Grid tile range (1 = melee, 2-4 = ranged)
+  range: number; // Grid tile range (1 = melee, 2-4 = ranged)
   startingMana: number;
   maxMana: number;
 }
 
 export type AbilityTargetType =
-  | 'single'
-  | 'aoeAll'
-  | 'aoeSplit'
-  | 'aoe'
-  | 'self'
-  | 'lowest_hp'
-  | 'allies'
-  | 'ally';
+  | "single"
+  | "aoeAll"
+  | "aoeSplit"
+  | "aoe"
+  | "self"
+  | "lowest_hp"
+  | "allies"
+  | "ally";
 
 export interface UnitAbility {
   name: string;
   description: string;
   manaCost: number;
-  damageType: 'physical' | 'magic' | 'true';
+  damageType: "physical" | "magic" | "true";
   damageValues: [number, number, number]; // [1-star, 2-star, 3-star]
   targetType: AbilityTargetType;
   radius?: number;

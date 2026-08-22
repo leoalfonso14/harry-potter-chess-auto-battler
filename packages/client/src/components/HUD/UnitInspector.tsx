@@ -8,6 +8,7 @@ export interface InspectedUnitData {
   starLevel?: number;
   currentHp?: number;
   maxHp?: number;
+  currentShield?: number;
   currentMana?: number;
   maxMana?: number;
   attackDamage?: number;
@@ -17,6 +18,39 @@ export interface InspectedUnitData {
   effectiveArmor?: number;
   effectiveMagicResist?: number;
 }
+
+const roleData: Record<string, { label: string; title: string; desc: string }> = {
+  Tank: {
+    label: '🛡️ Tank',
+    title: '🛡️ Tank Role',
+    desc: 'Absorbs frontline damage. Only role gaining mana when hit (+5 mana/attack + damage taken). Prioritized by enemies on distance ties.',
+  },
+  Fighter: {
+    label: '⚔️ Fighter',
+    title: '⚔️ Fighter Role',
+    desc: 'Durable melee frontliner. Gains +10 mana/attack and has inherent 10% Omnivamp (heals for 10% of damage dealt).',
+  },
+  Caster: {
+    label: '✨ Caster',
+    title: '✨ Caster Role',
+    desc: 'Relies on active spells. Gains +10 mana/attack plus baseline passive mana generation per second.',
+  },
+  Marksman: {
+    label: '🎯 Marksman',
+    title: '🎯 Marksman Role',
+    desc: 'Ranged physical carry scaling with attack speed. Generates +10 mana per basic attack.',
+  },
+  Assassin: {
+    label: '🗡️ Assassin',
+    title: '🗡️ Assassin Role',
+    desc: 'Fragile mobile backline diver. Low targeting priority if a Tank or Fighter is nearby. Gains +10 mana/attack.',
+  },
+  Specialist: {
+    label: '🔮 Specialist',
+    title: '🔮 Specialist Role',
+    desc: 'Unique champion that utilizes alternate resource mechanics or custom rules.',
+  },
+};
 
 export const UnitInspector: React.FC<{
   inspectedUnit: InspectedUnitData | null;
@@ -32,9 +66,10 @@ export const UnitInspector: React.FC<{
 
   const maxHp = inspectedUnit.maxHp || def.stats.hp[starIdx];
   const currentHp = inspectedUnit.currentHp !== undefined ? Math.max(0, inspectedUnit.currentHp) : maxHp;
+  const currentShield = inspectedUnit.currentShield || 0;
   const maxMana = inspectedUnit.maxMana || def.stats.maxMana;
   const currentMana = inspectedUnit.currentMana !== undefined ? Math.max(0, inspectedUnit.currentMana) : def.stats.startingMana;
-  const currentSpeed = inspectedUnit.attackSpeed !== undefined ? inspectedUnit.attackSpeed : def.stats.attackSpeed;
+  const currentSpeed = inspectedUnit.attackSpeed !== undefined ? inspectedUnit.attackSpeed.toFixed(2) : def.stats.attackSpeed.toFixed(2);
   const currentAD = inspectedUnit.attackDamage !== undefined ? inspectedUnit.attackDamage : def.stats.attackDamage[starIdx];
 
   const hasSunder = inspectedUnit.statusEffects?.includes('sunder');
@@ -62,24 +97,18 @@ export const UnitInspector: React.FC<{
       ? Math.round(baseMR * 0.8)
       : baseMR;
 
-  const costColorBorders: Record<number, string> = {
-    1: 'border-slate-500 bg-slate-950/95 text-slate-300',
-    2: 'border-emerald-500 bg-emerald-950/80 text-emerald-300',
-    3: 'border-blue-500 bg-blue-950/80 text-blue-300',
-    4: 'border-purple-500 bg-purple-950/80 text-purple-300',
-    5: 'border-amber-400 bg-amber-950/80 text-amber-300',
-  };
-
   const costBadges: Record<number, string> = {
     1: 'bg-slate-700 text-slate-200',
-    2: 'bg-emerald-600 text-white',
-    3: 'bg-blue-600 text-white',
-    4: 'bg-purple-600 text-white',
-    5: 'bg-amber-400 text-slate-950 font-black',
+    2: 'bg-emerald-700 text-white',
+    3: 'bg-blue-700 text-white',
+    4: 'bg-purple-700 text-white',
+    5: 'bg-amber-500 text-slate-950 font-black',
   };
 
+  const currentRole = def.combatRole && roleData[def.combatRole];
+
   return (
-    <div className="fixed top-14 right-60 z-50 max-w-sm w-80 bg-slate-950/98 backdrop-blur-md border border-indigo-500/40 rounded-2xl p-4 shadow-2xl shadow-black/80 flex flex-col gap-3 animate-fade-in select-none">
+    <div className="fixed top-14 right-60 z-50 max-w-sm w-80 bg-[#0a0e1a] border border-slate-700/80 rounded-2xl p-4 shadow-2xl shadow-black flex flex-col gap-3 animate-fade-in select-none">
       {/* Header: Name, Star Level, Cost, Close */}
       <div className="flex items-start justify-between border-b border-slate-800 pb-2.5">
         <div className="flex flex-col">
@@ -91,14 +120,22 @@ export const UnitInspector: React.FC<{
             <span className={`text-[10px] font-bold px-1.5 py-0.2 rounded ${costBadges[def.cost]}`}>
               ${def.cost} Gold
             </span>
-            <span className="text-[10px] bg-slate-900 px-1.5 py-0.5 rounded text-amber-300 font-bold border border-amber-500/30">
-              {def.combatRole === 'Tank' && '🛡️ Tank'}
-              {def.combatRole === 'Fighter' && '⚔️ Fighter'}
-              {def.combatRole === 'Caster' && '✨ Caster'}
-              {def.combatRole === 'Marksman' && '🎯 Marksman'}
-              {def.combatRole === 'Assassin' && '🗡️ Assassin'}
-              {def.combatRole === 'Specialist' && '🔮 Specialist'}
-            </span>
+            {currentRole && (
+              <div className="relative group/role">
+                <span className="text-[10px] bg-slate-900 hover:bg-slate-800 px-1.5 py-0.5 rounded text-amber-300 font-bold border border-amber-500/30 cursor-help transition flex items-center gap-1">
+                  {currentRole.label}
+                </span>
+                {/* Floating Combat Role Tooltip */}
+                <div className="absolute top-full left-0 mt-1.5 w-64 bg-[#0a0e1a] border border-slate-700/80 rounded-xl p-2.5 shadow-2xl shadow-black z-[9999] opacity-0 group-hover/role:opacity-100 transition-opacity duration-200 pointer-events-none flex flex-col gap-1 text-left">
+                  <span className="text-xs font-bold text-amber-300 border-b border-slate-800 pb-1">
+                    {currentRole.title}
+                  </span>
+                  <p className="text-[10px] text-slate-300 leading-snug">
+                    {currentRole.desc}
+                  </p>
+                </div>
+              </div>
+            )}
             <span className="text-[10px] bg-slate-900 px-1.5 py-0.5 rounded text-slate-400 border border-slate-800">
               {def.origins.join('/')} • {def.classes.join('/')}
             </span>
@@ -123,6 +160,11 @@ export const UnitInspector: React.FC<{
             <strong className="text-white">
               {currentHp}/{maxHp}
             </strong>
+            {currentShield > 0 && (
+              <span className="ml-1 text-cyan-300 font-mono text-[10px] font-bold">
+                (+{currentShield})
+              </span>
+            )}
           </span>
         </div>
 
@@ -161,12 +203,6 @@ export const UnitInspector: React.FC<{
             <strong className={hasShred || hasSmShred ? 'text-purple-300' : 'text-white'}>
               {effectiveMR}
             </strong>
-            {(hasSunder || hasSmSunder || hasShred || hasSmShred) && (
-              <span className="text-[9px] font-bold text-rose-300 ml-1">
-                {hasSunder ? '(-30% Sunder)' : hasSmSunder ? '(-20% Sunder)' : ''}
-                {hasShred ? '(-30% Shred)' : hasSmShred ? '(-20% Shred)' : ''}
-              </span>
-            )}
           </span>
         </div>
 
@@ -181,28 +217,8 @@ export const UnitInspector: React.FC<{
         </div>
       </div>
 
-      {/* Combat Role Mechanics Pill */}
-      <div className="text-[10px] bg-slate-900/80 p-2 rounded-xl border border-slate-800 text-slate-300 flex items-start gap-2">
-        <span className="text-amber-400 font-bold">
-          {def.combatRole === 'Tank' && '🛡️ Tank Role:'}
-          {def.combatRole === 'Fighter' && '⚔️ Fighter Role:'}
-          {def.combatRole === 'Caster' && '✨ Caster Role:'}
-          {def.combatRole === 'Marksman' && '🎯 Marksman Role:'}
-          {def.combatRole === 'Assassin' && '🗡️ Assassin Role:'}
-          {def.combatRole === 'Specialist' && '🔮 Specialist Role:'}
-        </span>
-        <span className="text-slate-400 leading-tight">
-          {def.combatRole === 'Tank' && 'Absorbs frontline damage. Only role gaining mana when hit (+5 mana/attack + damage taken). Prioritized by enemies on distance ties.'}
-          {def.combatRole === 'Fighter' && 'Durable melee frontliner. Gains +10 mana/attack and has inherent 10% Omnivamp (heals for 10% of damage dealt).'}
-          {def.combatRole === 'Caster' && 'Relies on active spells. Gains +10 mana/attack plus baseline passive mana generation per second.'}
-          {def.combatRole === 'Marksman' && 'Ranged physical carry scaling with attack speed. Generates +10 mana per basic attack.'}
-          {def.combatRole === 'Assassin' && 'Fragile mobile backline diver. Low targeting priority if a Tank or Fighter is nearby. Gains +10 mana/attack.'}
-          {def.combatRole === 'Specialist' && 'Unique champion that utilizes alternate resource mechanics or custom rules.'}
-        </span>
-      </div>
-
       {/* Ability Section */}
-      <div className="flex flex-col gap-1.5 bg-indigo-950/30 p-2.5 rounded-xl border border-indigo-500/30">
+      <div className="flex flex-col gap-1.5 bg-[#0e1628] p-2.5 rounded-xl border border-indigo-500/30">
         <div className="flex items-center justify-between">
           <span className="text-xs font-bold text-indigo-300 flex items-center gap-1.5">
             <Wand2 className="w-3.5 h-3.5 text-indigo-400" />
@@ -210,14 +226,7 @@ export const UnitInspector: React.FC<{
           </span>
           <div className="flex items-center gap-1">
             <span className="text-[9px] font-bold text-indigo-300 bg-indigo-950/80 px-1.5 py-0.5 rounded border border-indigo-500/30">
-              {def.ability.targetType === 'aoeAll' && 'AoE (All)'}
-              {def.ability.targetType === 'aoeSplit' && 'AoE (Split)'}
-              {def.ability.targetType === 'aoe' && 'AoE (All)'}
-              {def.ability.targetType === 'single' && 'Single Target'}
-              {def.ability.targetType === 'lowest_hp' && 'Lowest Ally'}
-              {def.ability.targetType === 'ally' && 'Ally'}
-              {def.ability.targetType === 'allies' && 'Allies'}
-              {def.ability.targetType === 'self' && 'Self'}
+              {def.ability.targetType}
             </span>
             <span className="text-[10px] uppercase font-bold text-amber-400 bg-slate-900/80 px-1.5 py-0.5 rounded border border-amber-500/30">
               {def.ability.damageType}
@@ -229,13 +238,20 @@ export const UnitInspector: React.FC<{
           {def.ability.description}
         </p>
 
-        <div className="flex items-center gap-1 text-[10px] text-slate-400 pt-1 border-t border-indigo-500/20">
-          <span className="font-semibold text-slate-400">Damage Scalings:</span>
-          <span className="text-amber-300 font-mono font-bold">
-            {def.ability.damageValues[0]} / {def.ability.damageValues[1]} /{' '}
-            {def.ability.damageValues[2]}
-          </span>
+        <div className="flex items-center justify-between text-[11px] pt-1 border-t border-indigo-500/20">
+          <span className="text-slate-400">Mana Cost:</span>
+          <span className="font-mono text-cyan-300 font-bold">{def.ability.manaCost} Mana</span>
         </div>
+
+        {def.ability.damageValues && (
+          <div className="flex items-center justify-between text-[11px]">
+            <span className="text-slate-400">Scaling (1★ / 2★ / 3★):</span>
+            <span className="font-mono text-amber-300 font-bold">
+              {def.ability.damageValues[0]} / {def.ability.damageValues[1]} /{' '}
+              {def.ability.damageValues[2]}
+            </span>
+          </div>
+        )}
       </div>
 
       {/* Equipped Items with Rich Hover Tooltip */}
@@ -252,11 +268,13 @@ export const UnitInspector: React.FC<{
               const statBadges: string[] = [];
               if (itm.stats.hp) statBadges.push(`+${itm.stats.hp} HP`);
               if (itm.stats.attackDamage) statBadges.push(`+${itm.stats.attackDamage} AD`);
-              if (itm.stats.abilityPower) statBadges.push(`+${itm.stats.abilityPower} AP`);
+              if (itm.stats.abilityPower) statBadges.push(`+${Math.round(itm.stats.abilityPower * 100)}% AP`);
               if (itm.stats.armor) statBadges.push(`+${itm.stats.armor} Armor`);
               if (itm.stats.magicResist) statBadges.push(`+${itm.stats.magicResist} MR`);
               if (itm.stats.attackSpeed) statBadges.push(`+${Math.round(itm.stats.attackSpeed * 100)}% AS`);
               if (itm.stats.critChance) statBadges.push(`+${Math.round(itm.stats.critChance * 100)}% Crit`);
+              if (itm.stats.critDamage) statBadges.push(`+${Math.round(itm.stats.critDamage * 100)}% Crit Dmg`);
+              if (itm.stats.dodgeChance) statBadges.push(`+${Math.round(itm.stats.dodgeChance * 100)}% Dodge`);
               if (itm.stats.startingMana) statBadges.push(`+${itm.stats.startingMana} Mana`);
               if (itm.stats.manaPerSecond) statBadges.push(`+${itm.stats.manaPerSecond} Mana/s`);
 
@@ -268,7 +286,7 @@ export const UnitInspector: React.FC<{
                   </div>
 
                   {/* Rich Floating Item Tooltip */}
-                  <div className="absolute bottom-full left-0 mb-2 w-64 bg-slate-950/98 backdrop-blur-md border border-amber-500/40 rounded-2xl p-3 shadow-2xl shadow-black z-[9999] opacity-0 group-hover/itm:opacity-100 transition-opacity duration-200 pointer-events-none flex flex-col gap-2 text-left">
+                  <div className="absolute bottom-full left-0 mb-2 w-64 bg-[#0a0e1a] border border-slate-700/80 rounded-2xl p-3 shadow-2xl shadow-black z-[9999] opacity-0 group-hover/itm:opacity-100 transition-opacity duration-200 pointer-events-none flex flex-col gap-2 text-left">
                     <div className="flex items-center justify-between border-b border-slate-800 pb-1.5">
                       <div className="flex items-center gap-1.5">
                         <span className="text-lg">{itm.icon}</span>

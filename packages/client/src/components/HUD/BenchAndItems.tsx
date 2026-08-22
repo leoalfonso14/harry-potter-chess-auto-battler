@@ -1,9 +1,38 @@
 import React, { useState } from 'react';
 import { useGameSocket } from '../../context/GameSocketContext';
-import { UNITS, ALL_ITEMS, BASE_ITEMS, BaseItemId, combineItems, calculateStreakBonus } from '@autobattler/shared';
-import { Trash2, BookOpen, Sparkles, DollarSign, Eye, ArrowLeft, Coins } from 'lucide-react';
+import { UNITS, ALL_ITEMS, BASE_ITEMS, BaseItemId, combineItems } from '@autobattler/shared';
+import { Trash2, BookOpen, Sparkles, DollarSign, Eye, ArrowLeft } from 'lucide-react';
 import { ItemRecipeModal } from './ItemRecipeModal';
 import { InspectedUnitData } from './UnitInspector';
+
+function formatStatBadge(key: string, value: number): string {
+  switch (key) {
+    case 'abilityPower':
+      return `+${Math.round(value * 100)}% AP`;
+    case 'attackDamage':
+      return `+${value} AD`;
+    case 'armor':
+      return `+${value} Armor`;
+    case 'magicResist':
+      return `+${value} MR`;
+    case 'hp':
+      return `+${value} HP`;
+    case 'attackSpeed':
+      return `+${Math.round(value * 100)}% AS`;
+    case 'critChance':
+      return `+${Math.round(value * 100)}% Crit`;
+    case 'critDamage':
+      return `+${Math.round(value * 100)}% Crit Dmg`;
+    case 'dodgeChance':
+      return `+${Math.round(value * 100)}% Dodge`;
+    case 'startingMana':
+      return `+${value} Mana`;
+    case 'manaPerSecond':
+      return `+${value} Mana/s`;
+    default:
+      return `+${value} ${key}`;
+  }
+}
 
 export const BenchAndItems: React.FC<{
   viewingPlayerId?: string;
@@ -32,7 +61,6 @@ export const BenchAndItems: React.FC<{
   const [hoveredItem, setHoveredItem] = useState<{ id: string; slot: number; synthesized?: any } | null>(null);
   const [draggedItemSlot, setDraggedItemSlot] = useState<number | null>(null);
   const [isRecipeModalOpen, setIsRecipeModalOpen] = useState(false);
-  const [showGoldTooltip, setShowGoldTooltip] = useState(false);
 
   if (!matchState) return null;
 
@@ -40,17 +68,6 @@ export const BenchAndItems: React.FC<{
   const isScouting = activeViewingId !== playerId;
   const player = matchState.players[activeViewingId];
   if (!player || player.isEliminated) return null;
-
-  // Economic calculations for next round
-  const interestGold = Math.min(5, Math.floor(player.gold / 10));
-  const baseIncome = matchState.stage <= 1 ? 3 : matchState.stage === 2 ? 4 : 5;
-  const nextWinStreak = player.streak >= 0 ? player.streak + 1 : 1;
-  const winStreakBonus = calculateStreakBonus(nextWinStreak);
-  const pvpWinGold = matchState.isPveRound ? 0 : 1;
-  const totalIfWin = baseIncome + interestGold + pvpWinGold + winStreakBonus;
-  const nextLossStreak = player.streak <= 0 ? player.streak - 1 : -1;
-  const lossStreakBonus = calculateStreakBonus(nextLossStreak);
-  const totalIfLose = baseIncome + interestGold + lossStreakBonus;
 
   const handleBenchSlotClick = (benchIdx: number) => {
     const benchUnit = player.bench[benchIdx];
@@ -164,73 +181,6 @@ export const BenchAndItems: React.FC<{
                 </span>
               </span>
               <div className="flex items-center gap-2">
-                {/* Gold Indicator with Detailed Expected Income Tooltip on Hover */}
-                <div className="relative flex items-center gap-1 bg-amber-500/15 border border-amber-500/40 px-2 py-0.5 rounded-lg shadow cursor-help group">
-                  <Coins className="w-3.5 h-3.5 text-amber-400 fill-amber-400/20" />
-                  <span className="text-xs font-extrabold font-mono text-amber-300">
-                    {player.gold}
-                  </span>
-                  <span className="text-[9px] text-amber-400/80 font-medium hidden sm:inline">
-                    (+{interestGold} int)
-                  </span>
-
-                  {/* Floating Gold Hover Tooltip */}
-                  <div className="absolute bottom-full left-0 mb-2 w-64 bg-slate-950/98 backdrop-blur-md border border-amber-500/50 rounded-2xl p-3 shadow-2xl shadow-black z-[9999] opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none flex flex-col gap-2 text-left">
-                    <div className="flex items-center justify-between border-b border-slate-800 pb-1.5">
-                      <span className="text-xs font-bold text-slate-100 flex items-center gap-1.5">
-                        <Coins className="w-3.5 h-3.5 text-amber-400" />
-                        Income Breakdown
-                      </span>
-                      <span className="text-[10px] font-mono text-amber-400 font-bold">
-                        Current: {player.gold}g
-                      </span>
-                    </div>
-
-                    <div className="flex flex-col gap-1 text-[11px] text-slate-300">
-                      <div className="flex justify-between">
-                        <span className="text-slate-400">Base Income:</span>
-                        <span className="font-mono text-slate-200">+{baseIncome}g</span>
-                      </div>
-                      <div className="flex justify-between">
-                        <span className="text-slate-400">Interest (1g per 10g, max 5):</span>
-                        <span className="font-mono text-amber-300">+{interestGold}g</span>
-                      </div>
-                    </div>
-
-                    <div className="flex flex-col gap-1.5 pt-1.5 border-t border-slate-800 text-[11px]">
-                      {/* Win Outcome */}
-                      <div className="bg-emerald-950/50 border border-emerald-500/40 rounded-xl p-2 flex flex-col gap-0.5">
-                        <div className="flex items-center justify-between font-bold text-emerald-300">
-                          <span>If You Win This Round:</span>
-                          <span className="text-sm font-mono font-black">+{totalIfWin}g</span>
-                        </div>
-                        <div className="text-[10px] text-emerald-400/80 flex items-center justify-between">
-                          <span>
-                            {baseIncome} base + {interestGold} int {pvpWinGold > 0 ? '+ 1 win' : ''}{' '}
-                            {winStreakBonus > 0 ? `+ ${winStreakBonus} streak` : ''}
-                          </span>
-                          <span>({nextWinStreak} streak)</span>
-                        </div>
-                      </div>
-
-                      {/* Loss Outcome */}
-                      <div className="bg-rose-950/40 border border-rose-500/40 rounded-xl p-2 flex flex-col gap-0.5">
-                        <div className="flex items-center justify-between font-bold text-rose-300">
-                          <span>If You Lose This Round:</span>
-                          <span className="text-sm font-mono font-black">+{totalIfLose}g</span>
-                        </div>
-                        <div className="text-[10px] text-rose-400/80 flex items-center justify-between">
-                          <span>
-                            {baseIncome} base + {interestGold} int{' '}
-                            {lossStreakBonus > 0 ? `+ ${lossStreakBonus} loss streak` : '+ 0 streak'}
-                          </span>
-                          <span>({Math.abs(nextLossStreak)} streak)</span>
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-
                 <button
                   onClick={() => setIsRecipeModalOpen(true)}
                   className="text-[11px] text-amber-400 hover:text-amber-300 flex items-center gap-1 bg-amber-500/10 hover:bg-amber-500/20 px-2 py-0.5 rounded border border-amber-500/20 transition"
@@ -429,7 +379,7 @@ export const BenchAndItems: React.FC<{
 
       {/* Floating Item Hover Tooltip / Synthesis Preview */}
       {hoveredItem && (
-        <div className="fixed bottom-28 left-4 z-50 w-80 bg-slate-950/98 backdrop-blur-md border border-amber-500/40 rounded-xl p-3 shadow-2xl shadow-black pointer-events-none animate-fade-in flex flex-col gap-2 text-left">
+        <div className="fixed bottom-28 left-4 z-50 w-80 bg-[#0a0e1a] border border-slate-700/80 rounded-xl p-3 shadow-2xl shadow-black pointer-events-none animate-fade-in flex flex-col gap-2 text-left">
           {hoveredItem.synthesized ? (
             <>
               <div className="flex items-center gap-2 border-b border-emerald-500/40 pb-1.5">
@@ -448,7 +398,7 @@ export const BenchAndItems: React.FC<{
                 <div className="flex items-center gap-1.5 flex-wrap text-[10px] text-amber-300 font-mono">
                   {Object.entries(hoveredItem.synthesized.stats).map(([k, v]) => (
                     <span key={k} className="bg-slate-900 px-1.5 py-0.5 rounded border border-slate-800">
-                      +{v as number} {k}
+                      {formatStatBadge(k, v as number)}
                     </span>
                   ))}
                 </div>
@@ -470,7 +420,7 @@ export const BenchAndItems: React.FC<{
                 <div className="flex items-center gap-1.5 flex-wrap text-[10px] text-amber-300 font-mono">
                   {Object.entries(ALL_ITEMS[hoveredItem.id].stats).map(([k, v]) => (
                     <span key={k} className="bg-slate-900 px-1.5 py-0.5 rounded border border-slate-800">
-                      +{v as number} {k}
+                      {formatStatBadge(k, v as number)}
                     </span>
                   ))}
                 </div>

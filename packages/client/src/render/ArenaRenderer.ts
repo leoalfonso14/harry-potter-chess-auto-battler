@@ -13,6 +13,7 @@ interface UnitVisual {
   targetY: number;
   currentHp: number;
   maxHp: number;
+  currentShield: number;
   currentMana: number;
   maxMana: number;
   isDead: boolean;
@@ -636,26 +637,38 @@ export class ArenaRenderer {
       targetY: y,
       currentHp: unit.currentHp,
       maxHp: unit.maxHp,
+      currentShield: 0,
       currentMana: unit.currentMana,
       maxMana: unit.maxMana,
       isDead: false,
     });
   }
 
-  private updateHpBar(g: Graphics, hp: number, maxHp: number, radius: number): void {
+  private updateHpBar(g: Graphics, hp: number, maxHp: number, radius: number, shield = 0): void {
     g.clear();
     const barW = radius * 2;
     const barH = 4;
     const barX = -radius;
     const barY = radius + 2;
 
+    // Background track
     g.rect(barX, barY, barW, barH);
     g.fill({ color: 0x0f172a, alpha: 0.95 });
 
+    // HP fill
     const pct = Math.max(0, Math.min(1, hp / maxHp));
     g.rect(barX, barY, barW * pct, barH);
     g.fill({ color: pct > 0.5 ? 0x22c55e : pct > 0.25 ? 0xeab308 : 0xef4444 });
-    g.stroke({ width: 0.75, color: 0x020617 });
+
+    // Shield overlay
+    if (shield > 0) {
+      const shieldPct = Math.min(1, shield / maxHp);
+      const shieldW = barW * shieldPct;
+      g.rect(barX + barW * pct, barY, Math.min(barW - barW * pct, shieldW), barH);
+      g.fill({ color: 0x38bdf8, alpha: 0.85 });
+    }
+
+    g.stroke({ width: 0.75, color: shield > 0 ? 0x38bdf8 : 0x020617 });
   }
 
   private updateManaBar(g: Graphics, mana: number, maxMana: number, radius: number): void {
@@ -673,7 +686,7 @@ export class ArenaRenderer {
     g.fill({ color: 0x06b6d4 });
   }
 
-  public startCombatPlayback(result: CombatResult, gold = 0): void {
+  public startCombatPlayback(result: CombatResult, gold = 0, startTick = 0): void {
     this.unitLayer.removeChildren();
     this.unitVisuals.clear();
     this.effectLayer.removeChildren();
@@ -686,9 +699,23 @@ export class ArenaRenderer {
       }
     }
     this.projectiles = [];
+    this.floatingTexts = [];
     this.activeEvents = result.events;
     this.currentEventIndex = 0;
-    this.combatSimTick = 0;
+    this.combatSimTick = startTick;
+
+    // Fast-forward initial state if starting midway through combat
+    if (startTick > 0 && this.activeEvents.length > 0) {
+      while (
+        this.currentEventIndex < this.activeEvents.length &&
+        this.activeEvents[this.currentEventIndex].tick <= startTick
+      ) {
+        const ev = this.activeEvents[this.currentEventIndex];
+        this.processCombatEvent(ev, true);
+        this.currentEventIndex++;
+      }
+    }
+
     this.isSimulating = true;
   }
 
@@ -702,7 +729,7 @@ export class ArenaRenderer {
         this.activeEvents[this.currentEventIndex].tick <= this.combatSimTick
       ) {
         const ev = this.activeEvents[this.currentEventIndex];
-        this.processCombatEvent(ev);
+        this.processCombatEvent(ev, false);
         this.currentEventIndex++;
       }
     }
@@ -715,7 +742,7 @@ export class ArenaRenderer {
       const dist = Math.sqrt(dx * dx + dy * dy);
 
       if (dist > 1.0) {
-        const slideStep = Math.min(dist, (3.5 + dist * 0.08) * delta);
+        const slideStep = Math.min(dist, (2.8 + dist * 0.05) * delta);
         visual.container.x += (dx / dist) * slideStep;
         visual.container.y += (dy / dist) * slideStep;
       } else {
@@ -738,7 +765,7 @@ export class ArenaRenderer {
         burst.stroke({ width: 2.5, color: p.color, alpha: 0.85 });
         this.effectLayer.addChild(burst);
         setTimeout(() => {
-          if (!this.isDestroyed) {
+          if (burst && !burst.destroyed) {
             this.effectLayer.removeChild(burst);
             burst.destroy();
           }
@@ -770,7 +797,7 @@ export class ArenaRenderer {
     }
   }
 
-  private processCombatEvent(ev: CombatEvent): void {
+  private processCombatEvent(ev: CombatEvent, isFastForward = false): void {
     if (ev.type === 'SPAWN' && ev.sourceId && ev.toPos) {
       const isAway = ev.sourceId.startsWith('away');
       const unitDefId = ev.unitDefId || 'neville_longbottom';
@@ -800,6 +827,10 @@ export class ArenaRenderer {
         const hexPos = this.getHexCenter(ev.toPos.x, ev.toPos.y);
         vis.targetX = hexPos.x;
         vis.targetY = hexPos.y;
+        if (isFastForward) {
+          vis.container.x = hexPos.x;
+          vis.container.y = hexPos.y;
+        }
       }
     } else if (ev.type === 'DAMAGE' && ev.targetId) {
       const vis = this.unitVisuals.get(ev.targetId);
@@ -807,23 +838,26 @@ export class ArenaRenderer {
         if (ev.remainingHp !== undefined) vis.currentHp = ev.remainingHp;
         if (ev.remainingMana !== undefined) vis.currentMana = ev.remainingMana;
         const radius = this.hexRadius * 0.72;
-        this.updateHpBar(vis.hpGraphic, vis.currentHp, vis.maxHp, radius);
+        this.updateHpBar(vis.hpGraphic, vis.currentHp, vis.maxHp, radius, vis.currentShield);
         this.updateManaBar(vis.manaGraphic, vis.currentMana, vis.maxMana, radius);
 
-        this.spawnFloatingCombatText(
-          vis.container.x,
-          vis.container.y - 20,
-          `-${ev.value}`,
-          ev.isCrit ? 0xef4444 : ev.damageType === 'magic' ? 0x38bdf8 : 0xf97316,
-          ev.isCrit ? 15 : 12,
-          Boolean(ev.isCrit)
-        );
+        if (!isFastForward) {
+          this.spawnFloatingCombatText(
+            vis.container.x,
+            vis.container.y - 20,
+            `-${ev.value}`,
+            ev.isCrit ? 0xef4444 : ev.damageType === 'magic' ? 0x38bdf8 : 0xf97316,
+            ev.isCrit ? 15 : 12,
+            Boolean(ev.isCrit)
+          );
+        }
 
         if (this.inspectedUnitId === ev.targetId && this.onUnitInspectUpdate) {
           this.onUnitInspectUpdate({
             id: ev.targetId,
             currentHp: Math.max(0, vis.currentHp),
             maxHp: vis.maxHp,
+            currentShield: vis.currentShield,
             currentMana: Math.max(0, vis.currentMana),
             maxMana: vis.maxMana,
           });
@@ -834,26 +868,70 @@ export class ArenaRenderer {
       if (vis && ev.value !== undefined) {
         if (ev.remainingHp !== undefined) vis.currentHp = ev.remainingHp;
         const radius = this.hexRadius * 0.72;
-        this.updateHpBar(vis.hpGraphic, vis.currentHp, vis.maxHp, radius);
+        this.updateHpBar(vis.hpGraphic, vis.currentHp, vis.maxHp, radius, vis.currentShield);
 
-        this.spawnFloatingCombatText(
-          vis.container.x,
-          vis.container.y - 20,
-          `+${ev.value}`,
-          0x22c55e,
-          13,
-          false
-        );
+        if (!isFastForward) {
+          this.spawnFloatingCombatText(
+            vis.container.x,
+            vis.container.y - 20,
+            `+${ev.value}`,
+            0x22c55e,
+            13,
+            false
+          );
+        }
 
         if (this.inspectedUnitId === ev.targetId && this.onUnitInspectUpdate) {
           this.onUnitInspectUpdate({
             id: ev.targetId,
             currentHp: Math.max(0, vis.currentHp),
             maxHp: vis.maxHp,
+            currentShield: vis.currentShield,
             currentMana: Math.max(0, vis.currentMana),
             maxMana: vis.maxMana,
           });
         }
+      }
+    } else if (ev.type === 'SHIELD' && ev.targetId) {
+      const vis = this.unitVisuals.get(ev.targetId);
+      if (vis && ev.value !== undefined) {
+        vis.currentShield = ev.value;
+        const radius = this.hexRadius * 0.72;
+        this.updateHpBar(vis.hpGraphic, vis.currentHp, vis.maxHp, radius, vis.currentShield);
+
+        if (!isFastForward) {
+          this.spawnFloatingCombatText(
+            vis.container.x,
+            vis.container.y - 20,
+            `+${ev.value} 🛡️`,
+            0x38bdf8,
+            13,
+            true
+          );
+        }
+
+        if (this.inspectedUnitId === ev.targetId && this.onUnitInspectUpdate) {
+          this.onUnitInspectUpdate({
+            id: ev.targetId,
+            currentHp: Math.max(0, vis.currentHp),
+            maxHp: vis.maxHp,
+            currentShield: vis.currentShield,
+            currentMana: Math.max(0, vis.currentMana),
+            maxMana: vis.maxMana,
+          });
+        }
+      }
+    } else if (ev.type === 'OVERTIME') {
+      if (!isFastForward) {
+        const center = this.getHexCenter(4, 4);
+        this.spawnFloatingCombatText(
+          center.x,
+          center.y - 40,
+          '⚡ OVERTIME! (+50% AS & DMG) ⚡',
+          0xf59e0b,
+          18,
+          true
+        );
       }
     } else if (ev.type === 'SPELL_CAST' && ev.sourceId) {
       const vis = this.unitVisuals.get(ev.sourceId);
@@ -872,62 +950,64 @@ export class ArenaRenderer {
           });
         }
 
-        const isAllied = !ev.sourceId.startsWith('away');
-        const projColor = isAllied ? 0x38bdf8 : 0xef4444; // Blue for allied, Red for enemy
+        if (!isFastForward) {
+          const isAllied = !ev.sourceId.startsWith('away');
+          const projColor = isAllied ? 0x38bdf8 : 0xef4444; // Blue for allied, Red for enemy
 
-        // Find target position
-        let targetX = vis.container.x;
-        let targetY = isAllied ? vis.container.y - 120 : vis.container.y + 120;
+          // Find target position
+          let targetX = vis.container.x;
+          let targetY = isAllied ? vis.container.y - 120 : vis.container.y + 120;
 
-        if (ev.targetId && this.unitVisuals.has(ev.targetId)) {
-          const targetVis = this.unitVisuals.get(ev.targetId)!;
-          targetX = targetVis.container.x;
-          targetY = targetVis.container.y;
-        } else {
-          // Find closest alive opponent
-          let closestDist = Infinity;
-          for (const [id, enemyVis] of this.unitVisuals.entries()) {
-            if (enemyVis.isDead) continue;
-            const enemyIsAway = id.startsWith('away');
-            if (enemyIsAway !== isAllied) continue; // Opponent team
-            const d = Math.hypot(enemyVis.container.x - vis.container.x, enemyVis.container.y - vis.container.y);
-            if (d < closestDist) {
-              closestDist = d;
-              targetX = enemyVis.container.x;
-              targetY = enemyVis.container.y;
+          if (ev.targetId && this.unitVisuals.has(ev.targetId)) {
+            const targetVis = this.unitVisuals.get(ev.targetId)!;
+            targetX = targetVis.container.x;
+            targetY = targetVis.container.y;
+          } else {
+            // Find closest alive opponent
+            let closestDist = Infinity;
+            for (const [id, enemyVis] of this.unitVisuals.entries()) {
+              if (enemyVis.isDead) continue;
+              const enemyIsAway = id.startsWith('away');
+              if (enemyIsAway !== isAllied) continue; // Opponent team
+              const d = Math.hypot(enemyVis.container.x - vis.container.x, enemyVis.container.y - vis.container.y);
+              if (d < closestDist) {
+                closestDist = d;
+                targetX = enemyVis.container.x;
+                targetY = enemyVis.container.y;
+              }
             }
           }
+
+          // Spawn Glowing Ability Projectile Dot
+          const projGraphic = new Graphics();
+          projGraphic.circle(0, 0, 8);
+          projGraphic.fill({ color: projColor, alpha: 0.95 });
+          projGraphic.circle(0, 0, 12);
+          projGraphic.fill({ color: projColor, alpha: 0.35 });
+          projGraphic.x = vis.container.x;
+          projGraphic.y = vis.container.y;
+          this.effectLayer.addChild(projGraphic);
+
+          this.projectiles.push({
+            graphic: projGraphic,
+            currentX: vis.container.x,
+            currentY: vis.container.y,
+            targetX,
+            targetY,
+            speed: 10.0,
+            color: projColor,
+          });
+
+          // Spell cast announcement text
+          this.spawnFloatingCombatText(
+            vis.container.x,
+            vis.container.y - 35,
+            ev.abilityName || 'CAST!',
+            isAllied ? 0x38bdf8 : 0xf87171,
+            12,
+            true
+          );
         }
-
-        // Spawn Glowing Ability Projectile Dot
-        const projGraphic = new Graphics();
-        projGraphic.circle(0, 0, 8);
-        projGraphic.fill({ color: projColor, alpha: 0.95 });
-        projGraphic.circle(0, 0, 12);
-        projGraphic.fill({ color: projColor, alpha: 0.35 });
-        projGraphic.x = vis.container.x;
-        projGraphic.y = vis.container.y;
-        this.effectLayer.addChild(projGraphic);
-
-        this.projectiles.push({
-          graphic: projGraphic,
-          currentX: vis.container.x,
-          currentY: vis.container.y,
-          targetX,
-          targetY,
-          speed: 10.0,
-          color: projColor,
-        });
-
-        // Spell cast announcement text
-        this.spawnFloatingCombatText(
-          vis.container.x,
-          vis.container.y - 35,
-          ev.abilityName || 'CAST!',
-          isAllied ? 0x38bdf8 : 0xf87171,
-          12,
-          true
-        );
       }
     } else if (ev.type === 'DEATH' && ev.targetId) {
       const vis = this.unitVisuals.get(ev.targetId);

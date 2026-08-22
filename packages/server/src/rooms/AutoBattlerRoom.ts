@@ -23,7 +23,7 @@ import {
 import { BotController } from '../bot/BotController.js';
 
 const PLANNING_DURATION = 30;
-const COMBAT_DURATION = 35;
+const COMBAT_DURATION = 30;
 const RESOLUTION_DURATION = 2;
 
 export interface MatchPveRewards {

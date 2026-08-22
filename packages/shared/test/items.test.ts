@@ -16,8 +16,8 @@ describe('Item Synthesis & Combination Matrix', () => {
     assert.ok(BASE_ITEMS['quicksilver']);
 
     // Check Pensieve Crystal (Mana Gem) stats
-    assert.equal(BASE_ITEMS['mana_gem'].stats.startingMana, 15);
-    assert.equal(BASE_ITEMS['mana_gem'].stats.manaPerSecond, 5);
+    assert.equal(BASE_ITEMS['mana_gem'].stats.startingMana, 10);
+    assert.equal(BASE_ITEMS['mana_gem'].stats.manaPerSecond, 3);
   });
 
   it('should have 36 crafted artifacts defined', () => {

@@ -63,11 +63,13 @@ export const ShopTray: React.FC<{
   const nextWinStreak = player.streak >= 0 ? player.streak + 1 : 1;
   const winStreakBonus = calculateStreakBonus(nextWinStreak);
   const pvpWinGold = matchState.isPveRound ? 0 : 1;
-  const totalIfWin = baseIncome + interestGold + pvpWinGold + winStreakBonus;
+  const interestIfWin = Math.min(5, Math.floor((player.gold + pvpWinGold) / 10));
+  const totalIfWin = baseIncome + interestIfWin + pvpWinGold + winStreakBonus;
 
   const nextLossStreak = player.streak <= 0 ? player.streak - 1 : -1;
   const lossStreakBonus = calculateStreakBonus(nextLossStreak);
-  const totalIfLose = baseIncome + interestGold + lossStreakBonus;
+  const interestIfLose = Math.min(5, Math.floor(player.gold / 10));
+  const totalIfLose = baseIncome + interestIfLose + lossStreakBonus;
 
   const handleBuy = (slotIndex: number) => {
     sendAction({ type: 'BUY_UNIT', shopSlot: slotIndex });
@@ -148,8 +150,8 @@ export const ShopTray: React.FC<{
             </span>
           </div>
 
-          {/* Gold Counter with Interest Indicator */}
-          <div className="flex items-center gap-2 bg-amber-500/15 border border-amber-500/40 px-3 py-1 rounded-lg shadow-inner">
+          {/* Gold Counter with Detailed Expected Income Tooltip on Hover */}
+          <div className="relative flex items-center gap-2 bg-amber-500/15 border border-amber-500/40 px-3 py-1 rounded-lg shadow-inner cursor-help group">
             <Coins className="w-4 h-4 text-amber-400 fill-amber-400/20" />
             <span className="text-base font-extrabold font-mono text-amber-300">
               {player.gold}
@@ -157,12 +159,72 @@ export const ShopTray: React.FC<{
             <span className="text-[10px] text-amber-400/80 font-medium">
               (+{interestGold} Interest)
             </span>
+
+            {/* Floating Gold Hover Tooltip */}
+            <div className="absolute bottom-full left-0 mb-2 w-72 bg-slate-950/98 backdrop-blur-md border border-amber-500/50 rounded-2xl p-3.5 shadow-2xl shadow-black z-[9999] opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none flex flex-col gap-2.5 text-left">
+              <div className="flex items-center justify-between border-b border-slate-800 pb-1.5">
+                <span className="text-xs font-bold text-slate-100 flex items-center gap-1.5">
+                  <Coins className="w-4 h-4 text-amber-400" />
+                  Income Breakdown
+                </span>
+                <span className="text-xs font-mono text-amber-400 font-bold">
+                  Current: {player.gold}g
+                </span>
+              </div>
+
+              <div className="flex flex-col gap-1 text-[11px] text-slate-300">
+                <div className="flex justify-between">
+                  <span className="text-slate-400">Base Income:</span>
+                  <span className="font-mono text-slate-200">+{baseIncome}g</span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-slate-400">Interest (1g per 10g, max 5g):</span>
+                  <span className="font-mono text-amber-300">+{interestGold}g</span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-slate-400">Current Streak Bonus:</span>
+                  <span className="font-mono text-indigo-300">+{calculateStreakBonus(player.streak)}g</span>
+                </div>
+              </div>
+
+              <div className="flex flex-col gap-1.5 pt-1.5 border-t border-slate-800 text-[11px]">
+                {/* Win Outcome */}
+                <div className="bg-emerald-950/50 border border-emerald-500/40 rounded-xl p-2 flex flex-col gap-0.5">
+                  <div className="flex items-center justify-between font-bold text-emerald-300">
+                    <span>If You Win This Round:</span>
+                    <span className="text-sm font-mono font-black">+{totalIfWin}g</span>
+                  </div>
+                  <div className="text-[10px] text-emerald-400/80 flex items-center justify-between">
+                    <span>
+                      {baseIncome} base + {interestIfWin} int {pvpWinGold > 0 ? '+ 1 win' : ''}{' '}
+                      {winStreakBonus > 0 ? `+ ${winStreakBonus} streak` : ''}
+                    </span>
+                    <span>({nextWinStreak} streak)</span>
+                  </div>
+                </div>
+
+                {/* Loss Outcome */}
+                <div className="bg-rose-950/40 border border-rose-500/40 rounded-xl p-2 flex flex-col gap-0.5">
+                  <div className="flex items-center justify-between font-bold text-rose-300">
+                    <span>If You Lose This Round:</span>
+                    <span className="text-sm font-mono font-black">+{totalIfLose}g</span>
+                  </div>
+                  <div className="text-[10px] text-rose-400/80 flex items-center justify-between">
+                    <span>
+                      {baseIncome} base + {interestIfLose} int{' '}
+                      {lossStreakBonus > 0 ? `+ ${lossStreakBonus} streak` : '+ 0 streak'}
+                    </span>
+                    <span>({Math.abs(nextLossStreak)} streak)</span>
+                  </div>
+                </div>
+              </div>
+            </div>
           </div>
 
-          {/* Streak Indicator */}
+          {/* Streak Indicator with Hover Breakdown Tooltip */}
           {player.streak !== 0 && (
             <div
-              className={`flex items-center gap-1 px-2.5 py-1 rounded-lg text-xs font-bold ${
+              className={`relative flex items-center gap-1 px-2.5 py-1 rounded-lg text-xs font-bold cursor-help group ${
                 player.streak > 0
                   ? 'bg-amber-950/60 text-amber-400 border border-amber-500/40'
                   : 'bg-blue-950/60 text-blue-400 border border-blue-500/40'
@@ -179,6 +241,71 @@ export const ShopTray: React.FC<{
                   <span>{Math.abs(player.streak)} Loss Streak</span>
                 </>
               )}
+
+              {/* Floating Streak Hover Tooltip */}
+              <div className="absolute bottom-full left-0 mb-2 w-64 bg-[#0a0e1a] border border-slate-700/80 rounded-2xl p-3 shadow-2xl shadow-black z-[9999] opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none flex flex-col gap-2 text-left">
+                <div className="flex items-center justify-between border-b border-slate-800 pb-1.5">
+                  <span className="text-xs font-bold text-slate-100 flex items-center gap-1.5">
+                    {player.streak > 0 ? (
+                      <Flame className="w-3.5 h-3.5 text-amber-400" />
+                    ) : (
+                      <Snowflake className="w-3.5 h-3.5 text-blue-400" />
+                    )}
+                    Streak Gold Bonus
+                  </span>
+                  <span className="text-[10px] font-mono text-amber-300 font-bold">
+                    +{calculateStreakBonus(player.streak)}g / round
+                  </span>
+                </div>
+
+                <div className="flex flex-col gap-1 text-[10px] text-slate-300">
+                  <div className="flex justify-between items-center py-0.5 border-b border-slate-800/50">
+                    <span className="text-slate-400">1 Streak:</span>
+                    <span className="font-mono text-slate-400">+0g (No bonus)</span>
+                  </div>
+                  <div
+                    className={`flex justify-between items-center py-0.5 border-b border-slate-800/50 ${
+                      Math.abs(player.streak) >= 2 && Math.abs(player.streak) <= 3
+                        ? 'text-amber-300 font-bold'
+                        : ''
+                    }`}
+                  >
+                    <span className="text-slate-400">2–3 Streak:</span>
+                    <span className="font-mono text-amber-400">+1g per round</span>
+                  </div>
+                  <div
+                    className={`flex justify-between items-center py-0.5 border-b border-slate-800/50 ${
+                      Math.abs(player.streak) === 4 ? 'text-amber-300 font-bold' : ''
+                    }`}
+                  >
+                    <span className="text-slate-400">4 Streak:</span>
+                    <span className="font-mono text-amber-400">+2g per round</span>
+                  </div>
+                  <div
+                    className={`flex justify-between items-center py-0.5 ${
+                      Math.abs(player.streak) >= 5 ? 'text-amber-300 font-bold' : ''
+                    }`}
+                  >
+                    <span className="text-slate-400">5+ Streak:</span>
+                    <span className="font-mono text-amber-400">+3g per round</span>
+                  </div>
+                </div>
+
+                <div className="pt-1.5 border-t border-slate-800 text-[10px] text-slate-400 flex flex-col gap-1">
+                  <div className="flex justify-between text-emerald-400">
+                    <span>Next win:</span>
+                    <span className="font-mono font-bold">
+                      +{winStreakBonus}g ({nextWinStreak} streak)
+                    </span>
+                  </div>
+                  <div className="flex justify-between text-rose-400">
+                    <span>Next loss:</span>
+                    <span className="font-mono font-bold">
+                      +{lossStreakBonus}g ({Math.abs(nextLossStreak)} streak)
+                    </span>
+                  </div>
+                </div>
+              </div>
             </div>
           )}
         </div>
@@ -186,14 +313,14 @@ export const ShopTray: React.FC<{
         {/* Top-Right: Shop Odds Matrix & Lock Button */}
         <div className="flex items-center gap-4">
           {/* Odds Matrix */}
-          <div className="flex items-center gap-2.5 bg-slate-900/80 px-2.5 py-1 rounded-lg border border-slate-800 text-[11px] font-medium">
+          <div className="flex items-center gap-2.5 bg-[#0a0e1a] px-2.5 py-1 rounded-lg border border-slate-800 text-[11px] font-medium">
             <span className="text-slate-400 font-semibold">Shop Odds:</span>
             <div className="flex items-center gap-2 font-mono font-bold">
-              <span className="text-slate-300">1★ {Math.round(odds[1] * 100)}%</span>
-              <span className="text-emerald-400">2★ {Math.round(odds[2] * 100)}%</span>
-              <span className="text-blue-400">3★ {Math.round(odds[3] * 100)}%</span>
-              <span className="text-purple-400">4★ {Math.round(odds[4] * 100)}%</span>
-              <span className="text-amber-400">5★ {Math.round(odds[5] * 100)}%</span>
+              <span className="text-slate-300">{Math.round(odds[1] * 100)}%</span>
+              <span className="text-emerald-400">{Math.round(odds[2] * 100)}%</span>
+              <span className="text-blue-400">{Math.round(odds[3] * 100)}%</span>
+              <span className="text-purple-400">{Math.round(odds[4] * 100)}%</span>
+              <span className="text-amber-400">{Math.round(odds[5] * 100)}%</span>
             </div>
           </div>
 

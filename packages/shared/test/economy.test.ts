@@ -8,7 +8,7 @@ import {
   addPlayerXp,
   XP_TO_LEVEL,
 } from '../src/engine/economy.js';
-import { PlayerState } from '../types/game.js';
+import { PlayerState } from '../src/types/game.js';
 
 function createMockPlayer(level = 1, xp = 0, gold = 0): PlayerState {
   return {
@@ -58,6 +58,17 @@ describe('Economy System', () => {
     assert.strictEqual(calculateStreakBonus(4), 2);
     assert.strictEqual(calculateStreakBonus(-5), 3);
     assert.strictEqual(calculateStreakBonus(8), 3);
+  });
+
+  it('should accurately calculate interest when win gold reaches an interval threshold', () => {
+    const goldBeforeWin = 9;
+    const pvpWinGold = 1;
+    assert.strictEqual(calculateInterest(goldBeforeWin), 0);
+    // After win gold is awarded before interest calculation:
+    assert.strictEqual(calculateInterest(goldBeforeWin + pvpWinGold), 1);
+
+    const goldBeforeWin2 = 19;
+    assert.strictEqual(calculateInterest(goldBeforeWin2 + pvpWinGold), 2);
   });
 
   it('should calculate total round income accurately', () => {

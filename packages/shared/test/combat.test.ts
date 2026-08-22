@@ -1,7 +1,7 @@
 import { describe, it } from 'node:test';
 import assert from 'node:assert';
 import { CombatSimulator } from '../src/engine/combat-simulator.js';
-import { BoardUnit } from '../types/unit.js';
+import { BoardUnit } from '../src/types/unit.js';
 
 describe('Deterministic Combat Simulator', () => {
   it('should run deterministic combat and resolve a winner', () => {
@@ -109,5 +109,58 @@ describe('Deterministic Combat Simulator', () => {
     assert.ok(kreacher);
     assert.deepStrictEqual(kreacher.origins, ['House-Elf']);
     assert.strictEqual(kreacher.origins.includes('Slytherin' as any), false);
+  });
+
+  it('should track damage dealt, damage taken, mitigation and shielding in combat summaries', () => {
+    const homeUnits: BoardUnit[] = [
+      {
+        id: 'h1',
+        unitId: 'cedric_diggory',
+        starLevel: 2,
+        position: { x: 3, y: 3 },
+        items: [],
+        currentHp: 1200,
+        maxHp: 1200,
+        currentMana: 60,
+        maxMana: 60,
+      },
+    ];
+
+    const awayUnits: BoardUnit[] = [
+      {
+        id: 'a1',
+        unitId: 'gregory_goyle',
+        starLevel: 2,
+        position: { x: 3, y: 3 },
+        items: [],
+        currentHp: 1350,
+        maxHp: 1350,
+        currentMana: 0,
+        maxMana: 90,
+      },
+    ];
+
+    const sim = new CombatSimulator('playerHome', 'playerAway', homeUnits, awayUnits, [], [], 2);
+    const result = sim.simulate();
+
+    assert.ok(result.durationTicks > 0);
+    const homeSummaries = Object.values(result.homeUnitSummaries);
+    const awaySummaries = Object.values(result.awayUnitSummaries);
+
+    assert.strictEqual(homeSummaries.length, 1);
+    assert.strictEqual(awaySummaries.length, 1);
+
+    const cedric = homeSummaries[0];
+    const goyle = awaySummaries[0];
+
+    assert.ok(cedric.damageDealt > 0);
+    assert.ok(goyle.damageDealt > 0);
+    assert.ok(cedric.damageTaken > 0);
+    assert.ok(goyle.damageTaken > 0);
+    assert.ok(cedric.physicalMitigated >= 0);
+    assert.ok(goyle.physicalMitigated >= 0);
+    assert.strictEqual(cedric.totalMitigated, cedric.physicalMitigated + cedric.magicMitigated);
+    assert.strictEqual(goyle.totalMitigated, goyle.physicalMitigated + goyle.magicMitigated);
+    assert.ok(cedric.shielding >= 0);
   });
 });

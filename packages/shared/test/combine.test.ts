@@ -1,8 +1,8 @@
 import { describe, it } from 'node:test';
 import assert from 'node:assert';
 import { checkAndCombineUnits } from '../src/engine/economy.js';
-import { PlayerState } from '../types/game.js';
-import { BoardUnit } from '../types/unit.js';
+import { PlayerState } from '../src/types/game.js';
+import { BoardUnit } from '../src/types/unit.js';
 import { XP_TO_LEVEL } from '../src/engine/economy.js';
 
 function createMockPlayer(): PlayerState {

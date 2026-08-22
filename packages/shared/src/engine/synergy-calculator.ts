@@ -31,14 +31,6 @@ export function calculateSynergies(board: (BoardUnit | null)[][]): ActiveTraitIn
     }
   }
 
-  // Mutual exclusion: Golden Trio and Slytherin Trio are rivals and disable each other if both 3-sets are fielded
-  const goldenCount = counts['Golden Trio'] || 0;
-  const slytherinCount = counts['Slytherin Trio'] || 0;
-  if (goldenCount >= 3 && slytherinCount >= 3) {
-    counts['Golden Trio'] = 0;
-    counts['Slytherin Trio'] = 0;
-  }
-
   const result: ActiveTraitInfo[] = [];
 
   for (const [traitName, count] of Object.entries(counts)) {
