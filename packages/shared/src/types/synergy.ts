@@ -58,7 +58,7 @@ export interface TraitBreakpoint {
 
 export interface TraitDefinition {
   id: string;
-  name: Origin | Class;
+  name: string;
   type: 'origin' | 'class';
   icon: string;
   description: string;

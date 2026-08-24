@@ -115,8 +115,8 @@ All 8 players draft from one global deck of cards. Purchasing a unit removes it 
 - **Cost 1:** 29 copies of each unit in the pool
 - **Cost 2:** 22 copies of each unit in the pool
 - **Cost 3:** 18 copies of each unit in the pool
-- **Cost 4:** 12 copies of each unit in the pool
-- **Cost 5 (Legendary):** 10 copies of each unit in the pool
+- **Cost 4:** 10 copies of each unit in the pool
+- **Cost 5 (Legendary):** 9 copies of each unit in the pool
 
 #### Shop Odds Progression Matrix
 
@@ -187,11 +187,24 @@ Just like modern tactical auto-battlers, champions in *The Grand Wizard's Duel* 
 #### Critical Strike Dynamics (Chance & Multiplier)
 - **Base Stats:** Every champion starts with a base **25% Critical Strike Chance** and **150% Critical Strike Damage**. Assassins start with an innate **40%+ Crit Chance**.
 - **Physical Attacks:** Standard auto-attacks and AD-scaling abilities can critically strike naturally.
-- **Spell Critical Strikes:** Magical abilities **cannot** critically strike by default unless the champion is equipped with a spell-crit artifact (*Elder Focus*, *Jeweled Resurrection Stone*, *Marauder's Map*) or possesses the Assassin/Slytherin synergy.
+- **Spell Critical Strikes:** Magical abilities **cannot** critically strike by default unless the champion is equipped with a spell-crit item (*The Elder Wand*, *Resurrection Stone Ring*, *Marauder's Map*) or possesses the Assassin/Slytherin synergy.
+
+#### Defense Reduction Hierarchy (Sunder & Shred Rules)
+- **Full Sunder (-30% Armor) & Full Shred (-30% Magic Resist):**
+  - Originate exclusively from **Completed Items** (e.g., *Slytherin's Poisoned Blade*, *Rowena's Diadem Wand*, *Grindelwald's Storm Wand*) and **Traits / Synergies** (e.g., *House of Malfoy* Bribe).
+- **Minor Sunder `smSunder` (-20% Armor) & Minor Shred `smShred` (-20% Magic Resist):**
+  - Originate exclusively from **Champion Abilities / Spells** (e.g., Dean Thomas's *Reducto Blast*, Pansy Parkinson's *Slytherin Sting*).
+- **Non-Stacking Single Application:**
+  - Major Sunder/Shred (-30%) strictly supersedes Minor Sunder/Shred (-20%). Multiple applications refresh debuff duration without compounding or multiplying damage mitigation reduction.
+
+#### Empowered Signature Lore Item System
+- **1-Unit Empowered Items:** Grant a **+10% buff** to all item stats when wielded by that specific champion (e.g., *The Firebolt* on Harry Potter, *Hungarian Horntail Hide* on Hagrid).
+- **Multi-Unit / Faction Empowered Items:** Grant a **+5% buff** to all item stats when wielded by any valid signature hero (e.g., *The Elder Wand* on Dumbledore, Harry, Voldemort, or Grindelwald).
+- **Stat-Only Scope:** The buff applies strictly to item stats (AD, AP, Armor, MR, HP, AS, Crit, Mana, Dodge), leaving passive trigger cadences (e.g., "every 3rd attack") intact.
 
 ---
 
-### E. Magical Artifacts & Complete 36-Item Combination Grid
+### E. Magical Items & Complete 36-Item Combination Grid
 
 Defeating neutral PvE monster rounds drops **8 Basic Components**:
 
@@ -582,8 +595,8 @@ export class UnitPool {
     1: 29, // 29 copies of each 1-cost unit
     2: 22,
     3: 18,
-    4: 12,
-    5: 10,
+    4: 10,
+    5: 9,
   };
 
   private pool: Map<string, number> = new Map();

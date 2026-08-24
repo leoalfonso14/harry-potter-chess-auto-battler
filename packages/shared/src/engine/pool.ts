@@ -15,10 +15,10 @@ export const SHOP_ODDS: Record<number, Record<UnitCost, number>> = {
 };
 
 export const INITIAL_POOL_COUNTS: Record<UnitCost, number> = {
-  1: 29,
-  2: 22,
-  3: 18,
-  4: 12,
+  1: 30,
+  2: 24,
+  3: 20,
+  4: 14,
   5: 10,
 };
 
@@ -64,54 +64,63 @@ export class UnitPool {
   }
 
   private rollCostTier(playerLevel: number): UnitCost {
-    const level = Math.max(1, Math.min(9, playerLevel));
-    const odds = SHOP_ODDS[level];
+    const level = Math.max(1, Math.min(10, playerLevel));
+    const odds = SHOP_ODDS[level] || SHOP_ODDS[1];
     const rand = Math.random();
 
     let cumulative = 0;
-    let lastValidCost: UnitCost = 1;
-
     for (let cost = 1 as UnitCost; cost <= 5; cost++) {
-      if (odds[cost] > 0) {
-        lastValidCost = cost;
-        cumulative += odds[cost];
+      const probability = odds[cost] || 0;
+      if (probability > 0) {
+        cumulative += probability;
         if (rand < cumulative) {
           return cost;
         }
       }
     }
-    return lastValidCost;
+
+    // Safe fallback to first available cost tier for this player level
+    for (let cost = 1 as UnitCost; cost <= 5; cost++) {
+      if ((odds[cost] || 0) > 0) {
+        return cost;
+      }
+    }
+    return 1;
   }
 
   public drawShop(playerLevel: number, count: number = 5): string[] {
     const shop: string[] = [];
-    const level = Math.max(1, Math.min(9, playerLevel));
-    const odds = SHOP_ODDS[level];
+    const level = Math.max(1, Math.min(10, playerLevel));
+    const odds = SHOP_ODDS[level] || SHOP_ODDS[1];
+
+    const playableUnits = UNIT_LIST.filter(
+      (u) => !PVE_CREEP_IDS.has(u.id) && !u.origins.includes('Wild')
+    );
 
     for (let i = 0; i < count; i++) {
-      const cost = this.rollCostTier(playerLevel);
-      const unitsOfCost = UNIT_LIST.filter((u) => u.cost === cost);
+      const cost = this.rollCostTier(level);
+      const unitsOfCost = playableUnits.filter((u) => u.cost === cost);
 
       // Filter units that still have copies in pool
       const availableUnits = unitsOfCost.filter((u) => (this.pool.get(u.id) || 0) > 0);
 
-      if (availableUnits.length === 0) {
+      if (availableUnits.length > 0) {
+        const picked = availableUnits[Math.floor(Math.random() * availableUnits.length)];
+        shop.push(picked.id);
+      } else {
         // Fallback to any available unit of allowed cost tier for this level
-        const fallbackUnits = UNIT_LIST.filter(
+        const fallbackUnits = playableUnits.filter(
           (u) => (odds[u.cost] || 0) > 0 && (this.pool.get(u.id) || 0) > 0
         );
         if (fallbackUnits.length > 0) {
           const picked = fallbackUnits[Math.floor(Math.random() * fallbackUnits.length)];
-          this.decrementPool(picked.id);
           shop.push(picked.id);
         } else {
-          // If all allowed units exhausted, default to standard 1-cost
-          shop.push('vanguard_knight');
+          // If all pool copies of this cost are held, pick from units of cost
+          const fallbackCostUnits = unitsOfCost.length > 0 ? unitsOfCost : playableUnits;
+          const picked = fallbackCostUnits[Math.floor(Math.random() * fallbackCostUnits.length)];
+          shop.push(picked.id);
         }
-      } else {
-        const picked = availableUnits[Math.floor(Math.random() * availableUnits.length)];
-        this.decrementPool(picked.id);
-        shop.push(picked.id);
       }
     }
 

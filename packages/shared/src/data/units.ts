@@ -7,10 +7,11 @@ export const UNITS: Record<string, UnitDefinition> = {
     "cost": 1,
     "combatRole": "Tank",
     "origins": [
-      "Gryffindor"
+        "Gryffindor"
     ],
     "classes": [
-      "Guardian"
+        "Herbologist",
+        "Guardian"
     ],
     "stats": {
       "hp": [
@@ -50,10 +51,10 @@ export const UNITS: Record<string, UnitDefinition> = {
     "cost": 1,
     "combatRole": "Caster",
     "origins": [
-      "Gryffindor"
+        "Gryffindor"
     ],
     "classes": [
-      "Sorcerer"
+        "Sorcerer"
     ],
     "stats": {
       "hp": [
@@ -93,12 +94,11 @@ export const UNITS: Record<string, UnitDefinition> = {
     "cost": 3,
     "combatRole": "Assassin",
     "origins": [
-      "Slytherin",
-      "Inquisitorial Squad",
-      "Malfoy"
+        "Slytherin"
     ],
     "classes": [
-      "Infiltrator"
+        "Inquisitorial Squad",
+        "Malfoy"
     ],
     "stats": {
       "hp": [
@@ -123,11 +123,7 @@ export const UNITS: Record<string, UnitDefinition> = {
       "description": "Summons an aggressive venomous serpent that strikes the target for massive poison damage.",
       "manaCost": 65,
       "damageType": "magic",
-      "damageValues": [
-        232,
-        522,
-        905
-      ],
+      "damageValues": [160, 250, 420],
       "targetType": "single"
     },
     "color": "#1a472a"
@@ -138,11 +134,11 @@ export const UNITS: Record<string, UnitDefinition> = {
     "cost": 1,
     "combatRole": "Fighter",
     "origins": [
-      "Slytherin",
-      "Inquisitorial Squad"
+        "Slytherin"
     ],
     "classes": [
-      "Brawler"
+        "Inquisitorial Squad",
+        "Brawler"
     ],
     "stats": {
       "hp": [
@@ -167,11 +163,8 @@ export const UNITS: Record<string, UnitDefinition> = {
       "description": "Slams heavy bulk into the target, gaining a shield and dealing damage.",
       "manaCost": 80,
       "damageType": "physical",
-      "damageValues": [
-        112,
-        202,
-        403
-      ],
+      "damageValues": [110, 170, 300],
+      "healValues": [130, 190, 320],
       "targetType": "single"
     },
     "color": "#2a623d"
@@ -182,11 +175,11 @@ export const UNITS: Record<string, UnitDefinition> = {
     "cost": 2,
     "combatRole": "Tank",
     "origins": [
-      "Slytherin",
-      "Inquisitorial Squad"
+        "Slytherin"
     ],
     "classes": [
-      "Guardian"
+        "Inquisitorial Squad",
+        "Guardian"
     ],
     "stats": {
       "hp": [
@@ -226,10 +219,10 @@ export const UNITS: Record<string, UnitDefinition> = {
     "cost": 1,
     "combatRole": "Caster",
     "origins": [
-      "Ravenclaw"
+        "Ravenclaw"
     ],
     "classes": [
-      "Mystic"
+        "Diviner"
     ],
     "stats": {
       "hp": [
@@ -270,10 +263,10 @@ export const UNITS: Record<string, UnitDefinition> = {
     "cost": 1,
     "combatRole": "Marksman",
     "origins": [
-      "Ravenclaw"
+        "Ravenclaw"
     ],
     "classes": [
-      "Sniper"
+        "Sniper"
     ],
     "stats": {
       "hp": [
@@ -313,10 +306,10 @@ export const UNITS: Record<string, UnitDefinition> = {
     "cost": 1,
     "combatRole": "Caster",
     "origins": [
-      "Hufflepuff"
+        "Hufflepuff"
     ],
     "classes": [
-      "Mystic"
+        "Herbologist"
     ],
     "stats": {
       "hp": [
@@ -334,18 +327,14 @@ export const UNITS: Record<string, UnitDefinition> = {
       "attackSpeed": 0.65,
       "range": 3,
       "startingMana": 20,
-      "maxMana": 70
+      "maxMana": 80
     },
     "ability": {
       "name": "Episkey Mend",
       "description": "Heals the lowest-health ally and cleanses negative status effects.",
-      "manaCost": 70,
+      "manaCost": 80,
       "damageType": "physical",
-      "damageValues": [
-        144,
-        259,
-        518
-      ],
+      "healValues": [120, 180, 320],
       "targetType": "lowest_hp"
     },
     "color": "#ecb939"
@@ -356,10 +345,10 @@ export const UNITS: Record<string, UnitDefinition> = {
     "cost": 1,
     "combatRole": "Tank",
     "origins": [
-      "Hufflepuff"
+        "Hufflepuff"
     ],
     "classes": [
-      "Guardian"
+        "Guardian"
     ],
     "stats": {
       "hp": [
@@ -384,11 +373,7 @@ export const UNITS: Record<string, UnitDefinition> = {
       "description": "Erects a protective golden ward that shields herself and adjacent allies.",
       "manaCost": 70,
       "damageType": "physical",
-      "damageValues": [
-        112,
-        202,
-        403
-      ],
+      "shieldValues": [140, 210, 340],
       "targetType": "allies"
     },
     "color": "#d97706"
@@ -399,10 +384,10 @@ export const UNITS: Record<string, UnitDefinition> = {
     "cost": 1,
     "combatRole": "Specialist",
     "origins": [
-      "House-Elf"
+        "House-Elf"
     ],
     "classes": [
-      "Trickster"
+        "Trickster"
     ],
     "stats": {
       "hp": [
@@ -427,11 +412,7 @@ export const UNITS: Record<string, UnitDefinition> = {
       "description": "Snaps fingers with wandless magic, disarming the target and blinking away.",
       "manaCost": 60,
       "damageType": "magic",
-      "damageValues": [
-        112,
-        202,
-        403
-      ],
+      "shieldValues": [120, 180, 300],
       "targetType": "single"
     },
     "color": "#a78bfa"
@@ -440,12 +421,12 @@ export const UNITS: Record<string, UnitDefinition> = {
     "id": "winky",
     "name": "Winky the House-Elf",
     "cost": 1,
-    "combatRole": "Specialist",
+    "combatRole": "Caster",
     "origins": [
-      "House-Elf"
+        "House-Elf"
     ],
     "classes": [
-      "Mystic"
+        "Mystic"
     ],
     "stats": {
       "hp": [
@@ -454,28 +435,25 @@ export const UNITS: Record<string, UnitDefinition> = {
         1800
       ],
       "armor": 25,
-      "magicResist": 40,
+      "magicResist": 35,
       "attackDamage": [
-        34,
-        61,
-        121
+        35,
+        63,
+        126
       ],
       "attackSpeed": 0.7,
       "range": 3,
-      "startingMana": 25,
-      "maxMana": 65
+      "startingMana": 15,
+      "maxMana": 60
     },
     "ability": {
-      "name": "Butterbeer Ward",
-      "description": "Channels loyal domestic charms, granting bonus Magic Resist and a shield to the lowest HP ally.",
-      "manaCost": 65,
+      "name": "Butterbeer Blast",
+      "description": "Hurls an explosive bottle of enchanted domestic brew, dealing magic damage to target and adjacent enemies.",
+      "manaCost": 60,
       "damageType": "magic",
-      "damageValues": [
-        120,
-        216,
-        432
-      ],
-      "targetType": "lowest_hp"
+      "damageValues": [180, 310, 620],
+      "targetType": "aoe",
+      "radius": 1
     },
     "color": "#c084fc"
   },
@@ -485,10 +463,10 @@ export const UNITS: Record<string, UnitDefinition> = {
     "cost": 1,
     "combatRole": "Specialist",
     "origins": [
-      "Magical Creature"
+        "Magical Creature"
     ],
     "classes": [
-      "Mystic"
+        "Sniper"
     ],
     "stats": {
       "hp": [
@@ -528,10 +506,10 @@ export const UNITS: Record<string, UnitDefinition> = {
     "cost": 1,
     "combatRole": "Specialist",
     "origins": [
-      "Magical Creature"
+        "Magical Creature"
     ],
     "classes": [
-      "Trickster"
+        "Trickster"
     ],
     "stats": {
       "hp": [
@@ -571,10 +549,10 @@ export const UNITS: Record<string, UnitDefinition> = {
     "cost": 1,
     "combatRole": "Fighter",
     "origins": [
-      "Durmstrang"
+        "Durmstrang"
     ],
     "classes": [
-      "Brawler"
+        "Brawler"
     ],
     "stats": {
       "hp": [
@@ -614,10 +592,10 @@ export const UNITS: Record<string, UnitDefinition> = {
     "cost": 1,
     "combatRole": "Caster",
     "origins": [
-      "Beauxbatons"
+        "Beauxbatons"
     ],
     "classes": [
-      "Mystic"
+        "Mystic"
     ],
     "stats": {
       "hp": [
@@ -642,11 +620,7 @@ export const UNITS: Record<string, UnitDefinition> = {
       "description": "Casts a gentle radiant beam that restores Health to the lowest HP allies.",
       "manaCost": 60,
       "damageType": "magic",
-      "damageValues": [
-        144,
-        259,
-        518
-      ],
+      "healValues": [130, 200, 350],
       "targetType": "lowest_hp"
     },
     "color": "#7dd3fc"
@@ -657,11 +631,11 @@ export const UNITS: Record<string, UnitDefinition> = {
     "cost": 1,
     "combatRole": "Caster",
     "origins": [
-      "Ghost",
-      "Ravenclaw"
+        "Ghost",
+        "Ravenclaw"
     ],
     "classes": [
-      "Mystic"
+        "Mystic"
     ],
     "stats": {
       "hp": [
@@ -679,17 +653,17 @@ export const UNITS: Record<string, UnitDefinition> = {
       "attackSpeed": 0.65,
       "range": 3,
       "startingMana": 40,
-      "maxMana": 100
+      "maxMana": 120
     },
     "ability": {
       "name": "Wailing Flood",
       "description": "Summons a flooding bathroom wave centered on her target, dealing magic damage and slowing enemy Attack Speed in an area.",
-      "manaCost": 100,
+      "manaCost": 120,
       "damageType": "magic",
       "damageValues": [
-        120,
-        216,
-        432
+        65,
+        115,
+        230
       ],
       "targetType": "aoe",
       "radius": 2
@@ -702,12 +676,11 @@ export const UNITS: Record<string, UnitDefinition> = {
     "cost": 2,
     "combatRole": "Fighter",
     "origins": [
-      "Gryffindor",
-      "Golden Trio",
-      "Weasley"
+        "Gryffindor"
     ],
     "classes": [
-      "Brawler"
+        "Golden Trio",
+        "Weasley"
     ],
     "stats": {
       "hp": [
@@ -732,11 +705,7 @@ export const UNITS: Record<string, UnitDefinition> = {
       "description": "Charges forward with giant chess piece force, dealing physical damage and knocking up enemies.",
       "manaCost": 80,
       "damageType": "physical",
-      "damageValues": [
-        176,
-        308,
-        651
-      ],
+      "damageValues": [180, 280, 500],
       "targetType": "single"
     },
     "color": "#d97706"
@@ -747,11 +716,11 @@ export const UNITS: Record<string, UnitDefinition> = {
     "cost": 2,
     "combatRole": "Caster",
     "origins": [
-      "Gryffindor",
-      "Golden Trio"
+        "Gryffindor"
     ],
     "classes": [
-      "Sorcerer"
+        "Golden Trio",
+        "Sorcerer"
     ],
     "stats": {
       "hp": [
@@ -792,11 +761,11 @@ export const UNITS: Record<string, UnitDefinition> = {
     "cost": 2,
     "combatRole": "Marksman",
     "origins": [
-      "Gryffindor",
-      "Weasley"
+        "Gryffindor"
     ],
     "classes": [
-      "Sniper"
+        "Weasley",
+        "Sniper"
     ],
     "stats": {
       "hp": [
@@ -836,10 +805,10 @@ export const UNITS: Record<string, UnitDefinition> = {
     "cost": 2,
     "combatRole": "Marksman",
     "origins": [
-      "Gryffindor"
+        "Gryffindor"
     ],
     "classes": [
-      "Sniper"
+        "Sniper"
     ],
     "stats": {
       "hp": [
@@ -879,11 +848,11 @@ export const UNITS: Record<string, UnitDefinition> = {
     "cost": 2,
     "combatRole": "Assassin",
     "origins": [
-      "Slytherin",
-      "Inquisitorial Squad"
+        "Slytherin"
     ],
     "classes": [
-      "Infiltrator"
+        "Inquisitorial Squad",
+        "Infiltrator"
     ],
     "stats": {
       "hp": [
@@ -923,10 +892,10 @@ export const UNITS: Record<string, UnitDefinition> = {
     "cost": 2,
     "combatRole": "Tank",
     "origins": [
-      "House-Elf"
+        "House-Elf"
     ],
     "classes": [
-      "Guardian"
+        "Guardian"
     ],
     "stats": {
       "hp": [
@@ -951,11 +920,7 @@ export const UNITS: Record<string, UnitDefinition> = {
       "description": "Invokes ancient House of Black wards, gaining a shield and dealing damage with malice.",
       "manaCost": 75,
       "damageType": "magic",
-      "damageValues": [
-        168,
-        294,
-        622
-      ],
+      "shieldValues": [160, 240, 400],
       "targetType": "single"
     },
     "color": "#14532d"
@@ -966,11 +931,11 @@ export const UNITS: Record<string, UnitDefinition> = {
     "cost": 2,
     "combatRole": "Caster",
     "origins": [
-      "Ravenclaw",
-      "Patil Sisters"
+        "Ravenclaw"
     ],
     "classes": [
-      "Sorcerer"
+        "Patil Sisters",
+        "Sorcerer"
     ],
     "stats": {
       "hp": [
@@ -1011,11 +976,11 @@ export const UNITS: Record<string, UnitDefinition> = {
     "cost": 2,
     "combatRole": "Marksman",
     "origins": [
-      "Gryffindor",
-      "Patil Sisters"
+        "Gryffindor"
     ],
     "classes": [
-      "Sniper"
+        "Patil Sisters",
+        "Sniper"
     ],
     "stats": {
       "hp": [
@@ -1055,10 +1020,10 @@ export const UNITS: Record<string, UnitDefinition> = {
     "cost": 2,
     "combatRole": "Tank",
     "origins": [
-      "Hufflepuff"
+        "Hufflepuff"
     ],
     "classes": [
-      "Guardian"
+        "Guardian"
     ],
     "stats": {
       "hp": [
@@ -1083,11 +1048,7 @@ export const UNITS: Record<string, UnitDefinition> = {
       "description": "Raises an impervious protective barrier, granting a shield to himself and adjacent allies.",
       "manaCost": 90,
       "damageType": "physical",
-      "damageValues": [
-        160,
-        280,
-        592
-      ],
+      "shieldValues": [160, 250, 420],
       "targetType": "allies"
     },
     "color": "#eab308"
@@ -1098,11 +1059,11 @@ export const UNITS: Record<string, UnitDefinition> = {
     "cost": 2,
     "combatRole": "Caster",
     "origins": [
-      "Hufflepuff",
-      "Professor"
+        "Hufflepuff"
     ],
     "classes": [
-      "Mystic"
+        "Professor",
+        "Herbologist"
     ],
     "stats": {
       "hp": [
@@ -1127,11 +1088,8 @@ export const UNITS: Record<string, UnitDefinition> = {
       "description": "Entangles enemies in living vines, healing nearby allies and rooting enemies.",
       "manaCost": 75,
       "damageType": "magic",
-      "damageValues": [
-        184,
-        322,
-        681
-      ],
+      "damageValues": [80, 125, 220],
+      "healValues": [180, 280, 500],
       "targetType": "lowest_hp"
     },
     "color": "#ca8a04"
@@ -1142,11 +1100,11 @@ export const UNITS: Record<string, UnitDefinition> = {
     "cost": 2,
     "combatRole": "Tank",
     "origins": [
-      "Ghost",
-      "Gryffindor"
+        "Ghost",
+        "Gryffindor"
     ],
     "classes": [
-      "Guardian"
+        "Guardian"
     ],
     "stats": {
       "hp": [
@@ -1171,11 +1129,8 @@ export const UNITS: Record<string, UnitDefinition> = {
       "description": "Flips his nearly severed head, taunting surrounding enemies and gaining a shield.",
       "manaCost": 80,
       "damageType": "magic",
-      "damageValues": [
-        144,
-        252,
-        533
-      ],
+      "damageValues": [60, 95, 160],
+      "shieldValues": [180, 280, 460],
       "targetType": "aoe",
       "radius": 2
     },
@@ -1187,10 +1142,10 @@ export const UNITS: Record<string, UnitDefinition> = {
     "cost": 2,
     "combatRole": "Fighter",
     "origins": [
-      "Durmstrang"
+        "Durmstrang"
     ],
     "classes": [
-      "Duelist"
+        "Duelist"
     ],
     "stats": {
       "hp": [
@@ -1230,10 +1185,10 @@ export const UNITS: Record<string, UnitDefinition> = {
     "cost": 2,
     "combatRole": "Caster",
     "origins": [
-      "Beauxbatons"
+        "Beauxbatons"
     ],
     "classes": [
-      "Sorcerer"
+        "Duelist"
     ],
     "stats": {
       "hp": [
@@ -1274,10 +1229,10 @@ export const UNITS: Record<string, UnitDefinition> = {
     "cost": 2,
     "combatRole": "Marksman",
     "origins": [
-      "Magical Creature"
+        "Magical Creature"
     ],
     "classes": [
-      "Sniper"
+        "Diviner"
     ],
     "stats": {
       "hp": [
@@ -1317,11 +1272,11 @@ export const UNITS: Record<string, UnitDefinition> = {
     "cost": 3,
     "combatRole": "Caster",
     "origins": [
-      "Gryffindor",
-      "Golden Trio"
+        "Gryffindor"
     ],
     "classes": [
-      "Sorcerer"
+        "Golden Trio",
+        "Auror"
     ],
     "stats": {
       "hp": [
@@ -1362,11 +1317,11 @@ export const UNITS: Record<string, UnitDefinition> = {
     "cost": 3,
     "combatRole": "Marksman",
     "origins": [
-      "Gryffindor",
-      "Weasley"
+        "Gryffindor"
     ],
     "classes": [
-      "Trickster"
+        "Weasley",
+        "Trickster"
     ],
     "stats": {
       "hp": [
@@ -1407,11 +1362,11 @@ export const UNITS: Record<string, UnitDefinition> = {
     "cost": 3,
     "combatRole": "Specialist",
     "origins": [
-      "Slytherin",
-      "Malfoy"
+        "Slytherin"
     ],
     "classes": [
-      "Mystic"
+        "Malfoy",
+        "Herbologist"
     ],
     "stats": {
       "hp": [
@@ -1436,11 +1391,7 @@ export const UNITS: Record<string, UnitDefinition> = {
       "description": "Pledges protection over her kin, granting the closest ally a shield and charming the farthest enemy.",
       "manaCost": 70,
       "damageType": "magic",
-      "damageValues": [
-        160,
-        288,
-        576
-      ],
+      "shieldValues": [220, 330, 560],
       "targetType": "lowest_hp"
     },
     "color": "#065f46"
@@ -1451,12 +1402,11 @@ export const UNITS: Record<string, UnitDefinition> = {
     "cost": 3,
     "combatRole": "Assassin",
     "origins": [
-      "Order of Phoenix",
-      "Gryffindor"
+        "Order of Phoenix"
     ],
     "classes": [
-      "Animagi",
-      "Infiltrator"
+        "Animagi",
+        "Duelist"
     ],
     "stats": {
       "hp": [
@@ -1481,11 +1431,7 @@ export const UNITS: Record<string, UnitDefinition> = {
       "description": "Leaps from shadows in grim animagus form, tearing into the lowest-health enemy with high critical damage.",
       "manaCost": 60,
       "damageType": "physical",
-      "damageValues": [
-        232,
-        522,
-        905
-      ],
+      "damageValues": [260, 420, 800],
       "targetType": "lowest_hp"
     },
     "color": "#334155"
@@ -1496,12 +1442,11 @@ export const UNITS: Record<string, UnitDefinition> = {
     "cost": 3,
     "combatRole": "Assassin",
     "origins": [
-      "Death Eater",
-      "Dark Wizard",
-      "Slytherin"
+        "Death Eater"
     ],
     "classes": [
-      "Infiltrator"
+        "Infiltrator",
+        "Curse-Caster"
     ],
     "stats": {
       "hp": [
@@ -1526,11 +1471,7 @@ export const UNITS: Record<string, UnitDefinition> = {
       "description": "Channels the Unforgivable Cruciatus Curse, dealing ticking True Damage that melts target armor.",
       "manaCost": 65,
       "damageType": "true",
-      "damageValues": [
-        232,
-        522,
-        905
-      ],
+      "damageValues": [280, 440, 880],
       "targetType": "single"
     },
     "color": "#450a0a"
@@ -1541,11 +1482,11 @@ export const UNITS: Record<string, UnitDefinition> = {
     "cost": 3,
     "combatRole": "Caster",
     "origins": [
-      "Slytherin",
-      "Professor"
+        "Slytherin"
     ],
     "classes": [
-      "Mystic"
+        "Professor",
+        "Herbologist"
     ],
     "stats": {
       "hp": [
@@ -1585,12 +1526,11 @@ export const UNITS: Record<string, UnitDefinition> = {
     "cost": 3,
     "combatRole": "Caster",
     "origins": [
-      "Ravenclaw",
-      "Professor"
+        "Ravenclaw"
     ],
     "classes": [
-      "Duelist",
-      "Sorcerer"
+        "Professor",
+        "Duelist"
     ],
     "stats": {
       "hp": [
@@ -1631,11 +1571,11 @@ export const UNITS: Record<string, UnitDefinition> = {
     "cost": 3,
     "combatRole": "Caster",
     "origins": [
-      "Ghost",
-      "Ravenclaw"
+        "Ghost",
+        "Ravenclaw"
     ],
     "classes": [
-      "Mystic"
+        "Diviner"
     ],
     "stats": {
       "hp": [
@@ -1676,11 +1616,11 @@ export const UNITS: Record<string, UnitDefinition> = {
     "cost": 3,
     "combatRole": "Fighter",
     "origins": [
-      "Order of Phoenix"
+        "Order of Phoenix"
     ],
     "classes": [
-      "Animagi",
-      "Brawler"
+        "Animagi",
+        "Auror"
     ],
     "stats": {
       "hp": [
@@ -1705,11 +1645,8 @@ export const UNITS: Record<string, UnitDefinition> = {
       "description": "Transforms and slashes with werewolf claws, dealing physical damage and healing based on damage dealt.",
       "manaCost": 70,
       "damageType": "physical",
-      "damageValues": [
-        232,
-        522,
-        905
-      ],
+      "damageValues": [220, 350, 680],
+      "healValues": [140, 210, 400],
       "targetType": "single"
     },
     "color": "#78716c"
@@ -1720,12 +1657,11 @@ export const UNITS: Record<string, UnitDefinition> = {
     "cost": 3,
     "combatRole": "Specialist",
     "origins": [
-      "Order of Phoenix",
-      "Hufflepuff"
+        "Order of Phoenix"
     ],
     "classes": [
-      "Animagi",
-      "Duelist"
+        "Animagi",
+        "Auror"
     ],
     "stats": {
       "hp": [
@@ -1750,11 +1686,7 @@ export const UNITS: Record<string, UnitDefinition> = {
       "description": "Rapidly morphs combat forms, striking the enemy for magic damage and surging with stacking Attack Speed.",
       "manaCost": 50,
       "damageType": "magic",
-      "damageValues": [
-        208,
-        468,
-        811
-      ],
+      "damageValues": [250, 400, 780],
       "targetType": "single"
     },
     "color": "#ec4899"
@@ -1765,11 +1697,11 @@ export const UNITS: Record<string, UnitDefinition> = {
     "cost": 3,
     "combatRole": "Caster",
     "origins": [
-      "Ghost",
-      "Hufflepuff"
+        "Ghost",
+        "Hufflepuff"
     ],
     "classes": [
-      "Mystic"
+        "Mystic"
     ],
     "stats": {
       "hp": [
@@ -1794,11 +1726,7 @@ export const UNITS: Record<string, UnitDefinition> = {
       "description": "Bestows a spectral feast that cleanses status effects and heals the lowest HP allies.",
       "manaCost": 80,
       "damageType": "physical",
-      "damageValues": [
-        232,
-        522,
-        905
-      ],
+      "healValues": [220, 340, 620],
       "targetType": "allies"
     },
     "color": "#fbbf24"
@@ -1809,11 +1737,11 @@ export const UNITS: Record<string, UnitDefinition> = {
     "cost": 3,
     "combatRole": "Caster",
     "origins": [
-      "Durmstrang",
-      "Dark Wizard"
+        "Durmstrang",
+        "Death Eater"
     ],
     "classes": [
-      "Sorcerer"
+        "Curse-Caster"
     ],
     "stats": {
       "hp": [
@@ -1853,11 +1781,11 @@ export const UNITS: Record<string, UnitDefinition> = {
     "cost": 3,
     "combatRole": "Fighter",
     "origins": [
-      "Magical Creature"
+        "Order of Phoenix"
     ],
     "classes": [
-      "Handler",
-      "Brawler"
+        "Handler",
+        "Brawler"
     ],
     "stats": {
       "hp": [
@@ -1882,11 +1810,7 @@ export const UNITS: Record<string, UnitDefinition> = {
       "description": "Summons his fierce boarhound Fang to bite and tackle the enemy, dealing physical smash damage.",
       "manaCost": 90,
       "damageType": "physical",
-      "damageValues": [
-        232,
-        522,
-        905
-      ],
+      "damageValues": [300, 480, 950],
       "targetType": "single"
     },
     "color": "#713f12"
@@ -1897,10 +1821,10 @@ export const UNITS: Record<string, UnitDefinition> = {
     "cost": 3,
     "combatRole": "Fighter",
     "origins": [
-      "Magical Creature"
+        "Magical Creature"
     ],
     "classes": [
-      "Brawler"
+        "Brawler"
     ],
     "stats": {
       "hp": [
@@ -1941,12 +1865,11 @@ export const UNITS: Record<string, UnitDefinition> = {
     "cost": 4,
     "combatRole": "Caster",
     "origins": [
-      "Gryffindor",
-      "Professor"
+        "Gryffindor"
     ],
     "classes": [
-      "Sorcerer",
-      "Animagi"
+        "Professor",
+        "Animagi"
     ],
     "stats": {
       "hp": [
@@ -1987,12 +1910,11 @@ export const UNITS: Record<string, UnitDefinition> = {
     "cost": 4,
     "combatRole": "Caster",
     "origins": [
-      "Slytherin",
-      "Professor",
-      "Dark Wizard"
+        "Death Eater"
     ],
     "classes": [
-      "Sorcerer"
+        "Professor",
+        "Curse-Caster"
     ],
     "stats": {
       "hp": [
@@ -2017,11 +1939,7 @@ export const UNITS: Record<string, UnitDefinition> = {
       "description": "Slashes invisible dark blades that cause enemies to bleed heavily and reduces their healing.",
       "manaCost": 80,
       "damageType": "magic",
-      "damageValues": [
-        280,
-        504,
-        1064
-      ],
+      "damageValues": [380, 580, 1200],
       "targetType": "single"
     },
     "color": "#064e3b"
@@ -2032,13 +1950,11 @@ export const UNITS: Record<string, UnitDefinition> = {
     "cost": 4,
     "combatRole": "Caster",
     "origins": [
-      "Slytherin",
-      "Death Eater",
-      "Ministry",
-      "Malfoy"
+        "Death Eater"
     ],
     "classes": [
-      "Sorcerer"
+        "Malfoy",
+        "Curse-Caster"
     ],
     "stats": {
       "hp": [
@@ -2063,11 +1979,7 @@ export const UNITS: Record<string, UnitDefinition> = {
       "description": "Channels the Imperius Curse, turning the highest AD enemy against their allies.",
       "manaCost": 75,
       "damageType": "magic",
-      "damageValues": [
-        280,
-        504,
-        1064
-      ],
+      "damageValues": [340, 520, 1100],
       "targetType": "single"
     },
     "color": "#047857"
@@ -2078,12 +1990,11 @@ export const UNITS: Record<string, UnitDefinition> = {
     "cost": 4,
     "combatRole": "Caster",
     "origins": [
-      "Gryffindor",
-      "Order of Phoenix",
-      "Weasley"
+        "Order of Phoenix"
     ],
     "classes": [
-      "Sorcerer"
+        "Weasley",
+        "Mystic"
     ],
     "stats": {
       "hp": [
@@ -2108,11 +2019,8 @@ export const UNITS: Record<string, UnitDefinition> = {
       "description": "Unleashes fierce protective wrath, blasting enemies in an area for heavy magic damage and granting the lowest HP ally a shield.",
       "manaCost": 80,
       "damageType": "magic",
-      "damageValues": [
-        288,
-        518,
-        1094
-      ],
+      "damageValues": [110, 170, 320],
+      "shieldValues": [260, 380, 680],
       "targetType": "aoeAll",
       "radius": 2
     },
@@ -2124,11 +2032,11 @@ export const UNITS: Record<string, UnitDefinition> = {
     "cost": 4,
     "combatRole": "Assassin",
     "origins": [
-      "Ghost",
-      "Slytherin"
+        "Ghost",
+        "Slytherin"
     ],
     "classes": [
-      "Infiltrator"
+        "Infiltrator"
     ],
     "stats": {
       "hp": [
@@ -2169,11 +2077,11 @@ export const UNITS: Record<string, UnitDefinition> = {
     "cost": 4,
     "combatRole": "Caster",
     "origins": [
-      "Ravenclaw",
-      "Professor"
+        "Ravenclaw"
     ],
     "classes": [
-      "Mystic"
+        "Professor",
+        "Diviner"
     ],
     "stats": {
       "hp": [
@@ -2214,11 +2122,11 @@ export const UNITS: Record<string, UnitDefinition> = {
     "cost": 4,
     "combatRole": "Marksman",
     "origins": [
-      "Magizoologist",
-      "Hufflepuff"
+        "Hufflepuff"
     ],
     "classes": [
-      "Handler"
+        "Magizoologist",
+        "Handler"
     ],
     "stats": {
       "hp": [
@@ -2259,11 +2167,11 @@ export const UNITS: Record<string, UnitDefinition> = {
     "cost": 4,
     "combatRole": "Tank",
     "origins": [
-      "Order of Phoenix",
-      "Ministry"
+        "Order of Phoenix",
+        "Ministry"
     ],
     "classes": [
-      "Guardian"
+        "Auror"
     ],
     "stats": {
       "hp": [
@@ -2288,11 +2196,8 @@ export const UNITS: Record<string, UnitDefinition> = {
       "description": "Erects an unbreakable auror barrier, gaining a massive shield and reflecting damage back to attackers.",
       "manaCost": 85,
       "damageType": "physical",
-      "damageValues": [
-        280,
-        504,
-        1064
-      ],
+      "damageValues": [80, 130, 240],
+      "shieldValues": [300, 450, 800],
       "targetType": "self"
     },
     "color": "#1e3a8a"
@@ -2303,11 +2208,11 @@ export const UNITS: Record<string, UnitDefinition> = {
     "cost": 4,
     "combatRole": "Caster",
     "origins": [
-      "Dark Wizard",
-      "Durmstrang"
+        "Dark Wizard",
+        "Durmstrang"
     ],
     "classes": [
-      "Sorcerer"
+        "Sorcerer"
     ],
     "stats": {
       "hp": [
@@ -2348,11 +2253,11 @@ export const UNITS: Record<string, UnitDefinition> = {
     "cost": 4,
     "combatRole": "Tank",
     "origins": [
-      "Beauxbatons"
+        "Beauxbatons"
     ],
     "classes": [
-      "Guardian",
-      "Brawler"
+        "Guardian",
+        "Brawler"
     ],
     "stats": {
       "hp": [
@@ -2377,11 +2282,8 @@ export const UNITS: Record<string, UnitDefinition> = {
       "description": "Stomps with half-giant force, stunning adjacent foes and gaining a shield.",
       "manaCost": 85,
       "damageType": "physical",
-      "damageValues": [
-        280,
-        504,
-        1064
-      ],
+      "damageValues": [90, 140, 260],
+      "shieldValues": [260, 400, 700],
       "targetType": "aoe",
       "radius": 2
     },
@@ -2393,11 +2295,11 @@ export const UNITS: Record<string, UnitDefinition> = {
     "cost": 4,
     "combatRole": "Assassin",
     "origins": [
-      "Magical Creature",
-      "Ghost"
+        "Magical Creature",
+        "Ghost"
     ],
     "classes": [
-      "Infiltrator"
+        "Infiltrator"
     ],
     "stats": {
       "hp": [
@@ -2437,11 +2339,11 @@ export const UNITS: Record<string, UnitDefinition> = {
     "cost": 5,
     "combatRole": "Tank",
     "origins": [
-      "Gryffindor",
-      "Divine"
+        "Gryffindor"
     ],
     "classes": [
-      "Guardian"
+        "Founder",
+        "Guardian"
     ],
     "stats": {
       "hp": [
@@ -2466,11 +2368,8 @@ export const UNITS: Record<string, UnitDefinition> = {
       "description": "Swings the ruby sword with heroic might, cleaving the entire frontline and granting team armor.",
       "manaCost": 85,
       "damageType": "physical",
-      "damageValues": [
-        240,
-        422,
-        1200
-      ],
+      "damageValues": [120, 190, 380],
+      "shieldValues": [280, 420, 750],
       "targetType": "aoe",
       "radius": 3
     },
@@ -2482,12 +2381,11 @@ export const UNITS: Record<string, UnitDefinition> = {
     "cost": 5,
     "combatRole": "Caster",
     "origins": [
-      "Slytherin",
-      "Dark Wizard",
-      "Divine"
+        "Slytherin"
     ],
     "classes": [
-      "Sorcerer"
+        "Founder",
+        "Sorcerer"
     ],
     "stats": {
       "hp": [
@@ -2512,11 +2410,7 @@ export const UNITS: Record<string, UnitDefinition> = {
       "description": "Unleashes the King of Serpents, dealing mapwide magic damage and petrifying enemies.",
       "manaCost": 90,
       "damageType": "magic",
-      "damageValues": [
-        240,
-        422,
-        1200
-      ],
+      "damageValues": [360, 550, 1300],
       "targetType": "aoe",
       "radius": 4
     },
@@ -2526,13 +2420,13 @@ export const UNITS: Record<string, UnitDefinition> = {
     "id": "rowena_ravenclaw",
     "name": "Rowena Ravenclaw",
     "cost": 5,
-    "combatRole": "Caster",
+    "combatRole": "Fighter",
     "origins": [
-      "Ravenclaw",
-      "Divine"
+        "Ravenclaw"
     ],
     "classes": [
-      "Sorcerer"
+        "Founder",
+        "Duelist"
     ],
     "stats": {
       "hp": [
@@ -2557,11 +2451,7 @@ export const UNITS: Record<string, UnitDefinition> = {
       "description": "Channels infinite arcane brilliance, striking all enemies for magic damage and granting allies bonus Mana.",
       "manaCost": 90,
       "damageType": "magic",
-      "damageValues": [
-        240,
-        422,
-        1200
-      ],
+      "damageValues": [320, 500, 1150],
       "targetType": "aoe",
       "radius": 4
     },
@@ -2573,11 +2463,11 @@ export const UNITS: Record<string, UnitDefinition> = {
     "cost": 5,
     "combatRole": "Tank",
     "origins": [
-      "Hufflepuff",
-      "Divine"
+        "Hufflepuff"
     ],
     "classes": [
-      "Mystic"
+        "Founder",
+        "Mystic"
     ],
     "stats": {
       "hp": [
@@ -2602,11 +2492,8 @@ export const UNITS: Record<string, UnitDefinition> = {
       "description": "Pours golden restorative ambrosia that heals the team and grants bonus Armor and Magic Resist.",
       "manaCost": 85,
       "damageType": "physical",
-      "damageValues": [
-        240,
-        422,
-        1200
-      ],
+      "shieldValues": [140, 210, 400],
+      "healValues": [220, 340, 650],
       "targetType": "allies"
     },
     "color": "#ca8a04"
@@ -2617,12 +2504,11 @@ export const UNITS: Record<string, UnitDefinition> = {
     "cost": 5,
     "combatRole": "Caster",
     "origins": [
-      "Order of Phoenix",
-      "Professor",
-      "Divine"
+        "Order of Phoenix"
     ],
     "classes": [
-      "Sorcerer"
+        "Headmaster",
+        "Grand Sorcerer"
     ],
     "stats": {
       "hp": [
@@ -2647,11 +2533,7 @@ export const UNITS: Record<string, UnitDefinition> = {
       "description": "Summons a colossal cyclone of fire and water across the arena, dealing massive AoE magic damage.",
       "manaCost": 100,
       "damageType": "magic",
-      "damageValues": [
-        240,
-        422,
-        1200
-      ],
+      "damageValues": [580, 920, 2100],
       "targetType": "aoe",
       "radius": 4
     },
@@ -2663,13 +2545,11 @@ export const UNITS: Record<string, UnitDefinition> = {
     "cost": 5,
     "combatRole": "Assassin",
     "origins": [
-      "Death Eater",
-      "Dark Wizard",
-      "Divine"
+        "Death Eater"
     ],
     "classes": [
-      "Sorcerer",
-      "Infiltrator"
+        "Dark Lord",
+        "Curse-Caster"
     ],
     "stats": {
       "hp": [
@@ -2694,11 +2574,7 @@ export const UNITS: Record<string, UnitDefinition> = {
       "description": "Casts the Killing Curse in a beam of blinding green light, dealing lethal True Damage.",
       "manaCost": 90,
       "damageType": "true",
-      "damageValues": [
-        240,
-        422,
-        1200
-      ],
+      "damageValues": [800, 1300, 3000],
       "targetType": "single"
     },
     "color": "#047857"
@@ -2709,11 +2585,10 @@ export const UNITS: Record<string, UnitDefinition> = {
     "cost": 5,
     "combatRole": "Caster",
     "origins": [
-      "Divine",
-      "Magical Creature"
+        "Magical Creature"
     ],
     "classes": [
-      "Mystic"
+        "Mystic"
     ],
     "stats": {
       "hp": [
@@ -2731,18 +2606,15 @@ export const UNITS: Record<string, UnitDefinition> = {
       "attackSpeed": 0.85,
       "range": 4,
       "startingMana": 40,
-      "maxMana": 90
+      "maxMana": 100
     },
     "ability": {
       "name": "Phoenix Rebirth & Tears",
       "description": "Erupts into brilliant golden flames, healing all allies and reviving the first fallen ally.",
       "manaCost": 90,
       "damageType": "magic",
-      "damageValues": [
-        240,
-        422,
-        1200
-      ],
+      "damageValues": [80, 130, 260],
+      "healValues": [200, 320, 600],
       "targetType": "allies"
     },
     "color": "#f59e0b"
@@ -2753,11 +2625,11 @@ export const UNITS: Record<string, UnitDefinition> = {
     "cost": 5,
     "combatRole": "Fighter",
     "origins": [
-      "Dragon",
-      "Magical Creature"
+        "Dragon",
+        "Magical Creature"
     ],
     "classes": [
-      "Brawler"
+        "Brawler"
     ],
     "stats": {
       "hp": [
@@ -2798,10 +2670,10 @@ export const UNITS: Record<string, UnitDefinition> = {
     "cost": 1,
     "combatRole": "Specialist",
     "origins": [
-      "Wild"
+        "Wild"
     ],
     "classes": [
-      "Trickster"
+        "Trickster"
     ],
     "stats": {
       "hp": [
@@ -2841,10 +2713,10 @@ export const UNITS: Record<string, UnitDefinition> = {
     "cost": 1,
     "combatRole": "Fighter",
     "origins": [
-      "Wild"
+        "Wild"
     ],
     "classes": [
-      "Brawler"
+        "Brawler"
     ],
     "stats": {
       "hp": [
@@ -2884,10 +2756,10 @@ export const UNITS: Record<string, UnitDefinition> = {
     "cost": 1,
     "combatRole": "Assassin",
     "origins": [
-      "Wild"
+        "Wild"
     ],
     "classes": [
-      "Infiltrator"
+        "Infiltrator"
     ],
     "stats": {
       "hp": [
@@ -2926,11 +2798,10 @@ export const UNITS: Record<string, UnitDefinition> = {
     "name": "Argus Filch",
     "cost": 1,
     "combatRole": "Tank",
-    "origins": [
-      "Inquisitorial Squad"
-    ],
+    "origins": [],
     "classes": [
-      "Guardian"
+        "Inquisitorial Squad",
+        "Guardian"
     ],
     "stats": {
       "hp": [
@@ -2970,11 +2841,11 @@ export const UNITS: Record<string, UnitDefinition> = {
     "cost": 4,
     "combatRole": "Caster",
     "origins": [
-      "Ministry",
-      "Inquisitorial Squad"
+        "Ministry"
     ],
     "classes": [
-      "Sorcerer"
+        "Headmaster",
+        "Inquisitorial Squad"
     ],
     "stats": {
       "hp": [
@@ -2999,11 +2870,7 @@ export const UNITS: Record<string, UnitDefinition> = {
       "description": "Enforces strict disciplinary order, silencing and disarming high-threat enemies and dealing magic damage.",
       "manaCost": 85,
       "damageType": "magic",
-      "damageValues": [
-        280,
-        504,
-        1064
-      ],
+      "damageValues": [240, 380, 780],
       "targetType": "aoe",
       "radius": 3
     },

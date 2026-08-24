@@ -1,6 +1,7 @@
 import React from 'react';
-import { BoardUnit, UNITS, ALL_ITEMS, UnitDefinition } from '@autobattler/shared';
+import { BoardUnit, UNITS, ALL_ITEMS, UnitDefinition, TRAITS } from '@autobattler/shared';
 import { X, Shield, Zap, Sparkles, Swords, Heart, Crosshair, Wand2 } from 'lucide-react';
+import { getUnitPortraitUrl, getUnitIcon, hasUnitImage } from '../../render/unit-assets.js';
 
 export interface InspectedUnitData {
   id?: string;
@@ -19,35 +20,43 @@ export interface InspectedUnitData {
   effectiveMagicResist?: number;
 }
 
-const roleData: Record<string, { label: string; title: string; desc: string }> = {
+const COST_CARD_STYLES: Record<number, { border: string; bg: string; badge: string }> = {
+  1: { border: 'border-slate-600/90 shadow-slate-900/40', bg: 'bg-[#0b101b]/95', badge: 'bg-slate-800 text-slate-300 border-slate-700' },
+  2: { border: 'border-emerald-600/90 shadow-emerald-950/40', bg: 'bg-[#081510]/95', badge: 'bg-emerald-900/80 text-emerald-200 border-emerald-600' },
+  3: { border: 'border-blue-600/90 shadow-blue-950/40', bg: 'bg-[#081120]/95', badge: 'bg-blue-900/80 text-blue-200 border-blue-600' },
+  4: { border: 'border-purple-600/90 shadow-purple-950/40', bg: 'bg-[#120a1f]/95', badge: 'bg-purple-900/80 text-purple-200 border-purple-600' },
+  5: { border: 'border-amber-400 shadow-amber-500/20', bg: 'bg-[#181105]/95', badge: 'bg-amber-500 text-slate-950 font-black border-amber-300' },
+};
+
+const ROLE_ICONS: Record<string, { icon: string; color: string; desc: string }> = {
   Tank: {
-    label: '🛡️ Tank',
-    title: '🛡️ Tank Role',
+    icon: '🛡️',
+    color: 'bg-blue-950/80 text-blue-300 border-blue-600/40',
     desc: 'Absorbs frontline damage. Only role gaining mana when hit (+5 mana/attack + damage taken). Prioritized by enemies on distance ties.',
   },
   Fighter: {
-    label: '⚔️ Fighter',
-    title: '⚔️ Fighter Role',
+    icon: '⚔️',
+    color: 'bg-orange-950/80 text-orange-300 border-orange-600/40',
     desc: 'Durable melee frontliner. Gains +10 mana/attack and has inherent 10% Omnivamp (heals for 10% of damage dealt).',
   },
   Caster: {
-    label: '✨ Caster',
-    title: '✨ Caster Role',
+    icon: '✨',
+    color: 'bg-purple-950/80 text-purple-300 border-purple-600/40',
     desc: 'Relies on active spells. Gains +10 mana/attack plus baseline passive mana generation per second.',
   },
   Marksman: {
-    label: '🎯 Marksman',
-    title: '🎯 Marksman Role',
+    icon: '🎯',
+    color: 'bg-emerald-950/80 text-emerald-300 border-emerald-600/40',
     desc: 'Ranged physical carry scaling with attack speed. Generates +10 mana per basic attack.',
   },
   Assassin: {
-    label: '🗡️ Assassin',
-    title: '🗡️ Assassin Role',
+    icon: '🗡️',
+    color: 'bg-rose-950/80 text-rose-300 border-rose-600/40',
     desc: 'Fragile mobile backline diver. Low targeting priority if a Tank or Fighter is nearby. Gains +10 mana/attack.',
   },
   Specialist: {
-    label: '🔮 Specialist',
-    title: '🔮 Specialist Role',
+    icon: '🔮',
+    color: 'bg-amber-950/80 text-amber-300 border-amber-600/40',
     desc: 'Unique champion that utilizes alternate resource mechanics or custom rules.',
   },
 };
@@ -97,50 +106,105 @@ export const UnitInspector: React.FC<{
       ? Math.round(baseMR * 0.8)
       : baseMR;
 
-  const costBadges: Record<number, string> = {
-    1: 'bg-slate-700 text-slate-200',
-    2: 'bg-emerald-700 text-white',
-    3: 'bg-blue-700 text-white',
-    4: 'bg-purple-700 text-white',
-    5: 'bg-amber-500 text-slate-950 font-black',
-  };
-
-  const currentRole = def.combatRole && roleData[def.combatRole];
+  const costStyle = COST_CARD_STYLES[def.cost] || COST_CARD_STYLES[1];
+  const roleInfo = def.combatRole && ROLE_ICONS[def.combatRole];
 
   return (
-    <div className="fixed top-14 right-60 z-50 max-w-sm w-80 bg-[#0a0e1a] border border-slate-700/80 rounded-2xl p-4 shadow-2xl shadow-black flex flex-col gap-3 animate-fade-in select-none">
-      {/* Header: Name, Star Level, Cost, Close */}
+    <div className={`fixed top-14 right-60 z-50 max-w-sm w-84 border-2 ${costStyle.border} ${costStyle.bg} backdrop-blur-md rounded-2xl p-4 shadow-2xl flex flex-col gap-3 animate-fade-in select-none`}>
+      {/* Header: Name, Portrait, Star Level, Cost, Close */}
       <div className="flex items-start justify-between border-b border-slate-800 pb-2.5">
-        <div className="flex flex-col">
-          <div className="flex items-center gap-1.5">
-            <span className="text-sm font-bold text-slate-100">{def.name}</span>
-            <span className="text-xs text-amber-400 font-bold">{'★'.repeat(starLevel)}</span>
+        <div className="flex items-center gap-2.5 min-w-0">
+          <div className="w-11 h-11 rounded-xl overflow-hidden border border-white/20 relative shadow-inner bg-slate-900 shrink-0 flex items-center justify-center">
+            {hasUnitImage(def.id) ? (
+              <img
+                src={getUnitPortraitUrl(def.id)}
+                alt={def.name}
+                className="w-full h-full object-cover"
+              />
+            ) : (
+              <span className="text-xl pointer-events-none">
+                {getUnitIcon(def.id)}
+              </span>
+            )}
           </div>
-          <div className="flex items-center gap-1.5 mt-1 flex-wrap">
-            <span className={`text-[10px] font-bold px-1.5 py-0.2 rounded ${costBadges[def.cost]}`}>
-              ${def.cost} Gold
+
+          <div className="flex flex-col gap-1 min-w-0">
+            <div className="flex items-center gap-2">
+              <h3 className="text-base font-bold text-slate-100 truncate">{def.name}</h3>
+              <span className="text-xs text-amber-400 font-bold tracking-widest shrink-0">
+                {'★'.repeat(starLevel)}
+              </span>
+            </div>
+
+            <div className="flex items-center gap-1.5 flex-wrap">
+            {/* Scaling Type Badge (AD / AP / True) */}
+            <span
+              className={`text-[10px] font-bold px-2 py-0.5 rounded border flex items-center gap-1 ${
+                def.ability.damageType === 'magic'
+                  ? 'bg-cyan-950/80 text-cyan-300 border-cyan-500/50'
+                  : def.ability.damageType === 'true'
+                  ? 'bg-fuchsia-950/80 text-fuchsia-300 border-fuchsia-500/50'
+                  : 'bg-amber-950/80 text-amber-300 border-amber-500/50'
+              }`}
+              title={
+                def.ability.damageType === 'magic'
+                  ? 'Magic Damage: Scales with Ability Power (AP)'
+                  : def.ability.damageType === 'true'
+                  ? 'True Damage: Pure Damage ignoring defenses'
+                  : 'Physical Damage: Scales with Attack Damage (AD)'
+              }
+            >
+              {def.ability.damageType === 'magic' ? '✨ AP' : def.ability.damageType === 'true' ? '⚡ True' : '⚔️ AD'}
             </span>
-            {currentRole && (
+
+            {roleInfo && (
               <div className="relative group/role">
-                <span className="text-[10px] bg-slate-900 hover:bg-slate-800 px-1.5 py-0.5 rounded text-amber-300 font-bold border border-amber-500/30 cursor-help transition flex items-center gap-1">
-                  {currentRole.label}
+                <span
+                  className={`text-[10px] font-bold px-2 py-0.5 rounded border flex items-center gap-1 cursor-help transition ${roleInfo.color}`}
+                >
+                  <span>{roleInfo.icon}</span>
+                  <span>{def.combatRole}</span>
                 </span>
                 {/* Floating Combat Role Tooltip */}
                 <div className="absolute top-full left-0 mt-1.5 w-64 bg-[#0a0e1a] border border-slate-700/80 rounded-xl p-2.5 shadow-2xl shadow-black z-[9999] opacity-0 group-hover/role:opacity-100 transition-opacity duration-200 pointer-events-none flex flex-col gap-1 text-left">
                   <span className="text-xs font-bold text-amber-300 border-b border-slate-800 pb-1">
-                    {currentRole.title}
+                    {roleInfo.icon} {def.combatRole} Role
                   </span>
                   <p className="text-[10px] text-slate-300 leading-snug">
-                    {currentRole.desc}
+                    {roleInfo.desc}
                   </p>
                 </div>
               </div>
             )}
-            <span className="text-[10px] bg-slate-900 px-1.5 py-0.5 rounded text-slate-400 border border-slate-800">
-              {def.origins.join('/')} • {def.classes.join('/')}
-            </span>
+
+            {/* Origin & Class Tags */}
+            {def.origins.map((orig) => {
+              const trDef = TRAITS[orig];
+              return (
+                <span
+                  key={orig}
+                  className="text-[10px] font-medium bg-amber-950/50 text-amber-300 border border-amber-600/40 px-2 py-0.5 rounded-md flex items-center gap-1"
+                >
+                  <span>{trDef?.icon || '🏛️'}</span>
+                  <span>{orig}</span>
+                </span>
+              );
+            })}
+            {def.classes.map((cls) => {
+              const trDef = TRAITS[cls];
+              return (
+                <span
+                  key={cls}
+                  className="text-[10px] font-medium bg-indigo-950/50 text-indigo-300 border border-indigo-600/40 px-2 py-0.5 rounded-md flex items-center gap-1"
+                >
+                  <span>{trDef?.icon || '⚔️'}</span>
+                  <span>{cls}</span>
+                </span>
+              );
+            })}
           </div>
         </div>
+      </div>
 
         <button
           onClick={onClose}
@@ -151,32 +215,71 @@ export const UnitInspector: React.FC<{
         </button>
       </div>
 
-      {/* Primary Base Stats Grid */}
-      <div className="grid grid-cols-2 gap-1.5 text-[11px] bg-slate-900/60 p-2.5 rounded-xl border border-slate-800/80">
-        <div className="flex items-center gap-1.5 text-emerald-400">
-          <Heart className="w-3.5 h-3.5" />
-          <span>
-            HP:{' '}
-            <strong className="text-white">
-              {currentHp}/{maxHp}
-            </strong>
+      {/* Two-Tone Health & Shield Visual Progress Bar */}
+      <div className="flex flex-col gap-1 bg-slate-900/80 p-2.5 rounded-xl border border-slate-800/80">
+        <div className="flex items-center justify-between text-[10px] font-mono font-bold">
+          <div className="flex items-center gap-1.5">
+            <span className="text-emerald-400">HP: {currentHp}/{maxHp}</span>
             {currentShield > 0 && (
-              <span className="ml-1 text-cyan-300 font-mono text-[10px] font-bold">
-                (+{currentShield})
+              <span className="bg-slate-800 text-white border border-slate-600 px-1.5 py-0.2 rounded shadow-sm text-[9px]">
+                🛡️ +{currentShield} Shield
               </span>
             )}
+          </div>
+          <span className="text-cyan-400">
+            {currentMana}/{maxMana} Mana
           </span>
         </div>
 
-        <div className="flex items-center gap-1.5 text-cyan-400">
-          <Zap className="w-3.5 h-3.5" />
+        {/* Dual HP + Shield Bar */}
+        <div className="w-full bg-slate-950 h-2 rounded-full overflow-hidden border border-slate-800 flex relative">
+          {/* Green Health Portion */}
+          <div
+            className="h-full bg-emerald-500 transition-all duration-200"
+            style={{ width: `${Math.min(100, (currentHp / maxHp) * 100)}%` }}
+          />
+          {/* Solid White Shield Portion extending to the right */}
+          {currentShield > 0 && (
+            <div
+              className="h-full bg-white border-l border-slate-400 transition-all duration-200 shadow-sm"
+              style={{ width: `${Math.min(100 - Math.min(100, (currentHp / maxHp) * 100), (currentShield / maxHp) * 100)}%` }}
+            />
+          )}
+        </div>
+
+        {/* Mana Bar */}
+        <div className="w-full bg-slate-950 h-1.5 rounded-full overflow-hidden border border-slate-800">
+          <div
+            className="h-full bg-cyan-400 transition-all duration-200"
+            style={{ width: `${Math.min(100, (currentMana / maxMana) * 100)}%` }}
+          />
+        </div>
+      </div>
+
+      {/* Primary Base Stats Grid */}
+      <div className="grid grid-cols-2 gap-1.5 text-[11px] bg-slate-900/70 p-2.5 rounded-xl border border-slate-800/80 font-mono">
+        <div className="flex items-center gap-1.5 text-emerald-400">
+          <Heart className="w-3.5 h-3.5" />
           <span>
-            Mana:{' '}
-            <strong className="text-white">
-              {currentMana}/{maxMana}
-            </strong>
+            HP: <strong className="text-white">{currentHp}/{maxHp}</strong>
           </span>
         </div>
+
+        {currentShield > 0 ? (
+          <div className="flex items-center gap-1.5 text-white font-bold bg-slate-800/90 px-1.5 py-0.5 rounded border border-slate-600 shadow-sm">
+            <Shield className="w-3.5 h-3.5 text-white" />
+            <span>
+              Shield: <strong className="text-white">+{currentShield}</strong>
+            </span>
+          </div>
+        ) : (
+          <div className="flex items-center gap-1.5 text-cyan-400">
+            <Zap className="w-3.5 h-3.5" />
+            <span>
+              Mana: <strong className="text-white">{currentMana}/{maxMana}</strong>
+            </span>
+          </div>
+        )}
 
         <div className="flex items-center gap-1.5 text-orange-400">
           <Swords className="w-3.5 h-3.5" />
@@ -211,47 +314,77 @@ export const UnitInspector: React.FC<{
           <span>
             Range:{' '}
             <strong className="text-white">
-              {def.stats.range === 1 ? 'Melee (1)' : `${def.stats.range} Tiles`}
+              {def.stats.range === 1 ? 'Melee (1)' : `${def.stats.range} Hexes`}
             </strong>
           </span>
         </div>
       </div>
 
       {/* Ability Section */}
-      <div className="flex flex-col gap-1.5 bg-[#0e1628] p-2.5 rounded-xl border border-indigo-500/30">
+      <div className="flex flex-col gap-1.5 bg-slate-900/80 p-2.5 rounded-xl border border-slate-800">
         <div className="flex items-center justify-between">
-          <span className="text-xs font-bold text-indigo-300 flex items-center gap-1.5">
-            <Wand2 className="w-3.5 h-3.5 text-indigo-400" />
-            {def.ability.name}
-          </span>
-          <div className="flex items-center gap-1">
-            <span className="text-[9px] font-bold text-indigo-300 bg-indigo-950/80 px-1.5 py-0.5 rounded border border-indigo-500/30">
-              {def.ability.targetType}
-            </span>
-            <span className="text-[10px] uppercase font-bold text-amber-400 bg-slate-900/80 px-1.5 py-0.5 rounded border border-amber-500/30">
-              {def.ability.damageType}
+          <div className="flex items-center gap-1.5">
+            <Wand2 className="w-3.5 h-3.5 text-amber-400" />
+            <span className="text-xs font-bold text-slate-200">
+              {def.ability.name}
             </span>
           </div>
+          <span className="text-[10px] font-mono font-bold bg-blue-950 border border-blue-800/80 text-blue-300 px-1.5 py-0.2 rounded">
+            {def.ability.manaCost} Mana
+          </span>
         </div>
 
-        <p className="text-[11px] text-slate-300 leading-relaxed">
+        <p className="text-[11px] text-slate-300 leading-snug">
           {def.ability.description}
         </p>
 
-        <div className="flex items-center justify-between text-[11px] pt-1 border-t border-indigo-500/20">
-          <span className="text-slate-400">Mana Cost:</span>
-          <span className="font-mono text-cyan-300 font-bold">{def.ability.manaCost} Mana</span>
-        </div>
-
-        {def.ability.damageValues && (
-          <div className="flex items-center justify-between text-[11px]">
-            <span className="text-slate-400">Scaling (1★ / 2★ / 3★):</span>
-            <span className="font-mono text-amber-300 font-bold">
-              {def.ability.damageValues[0]} / {def.ability.damageValues[1]} /{' '}
-              {def.ability.damageValues[2]}
+        {/* Dynamic Ability Values (Damage, Shield, Heal) */}
+        <div className="flex flex-col gap-1 pt-1 border-t border-slate-800/80 text-[10px] font-mono">
+          <div className="flex items-center justify-between">
+            <span className="text-slate-400 font-semibold uppercase">🎯 Scaling:</span>
+            <span className={`font-bold ${
+              def.ability.damageType === 'magic'
+                ? 'text-cyan-300'
+                : def.ability.damageType === 'true'
+                ? 'text-fuchsia-300'
+                : 'text-amber-300'
+            }`}>
+              {def.ability.damageType === 'magic'
+                ? '✨ Magic (Ability Power)'
+                : def.ability.damageType === 'true'
+                ? '⚡ True Damage (Pure)'
+                : '⚔️ Physical (Attack Damage)'}
             </span>
           </div>
-        )}
+
+          {def.ability.damageValues && (
+            <div className="flex items-center justify-between">
+              <span className="text-red-400 font-semibold uppercase">💥 Damage:</span>
+              <span className="text-red-300 font-bold">
+                {def.ability.damageValues[0]} / {def.ability.damageValues[1]} /{' '}
+                {def.ability.damageValues[2]}
+              </span>
+            </div>
+          )}
+          {def.ability.shieldValues && (
+            <div className="flex items-center justify-between">
+              <span className="text-blue-400 font-semibold uppercase">🛡️ Shield:</span>
+              <span className="text-blue-300 font-bold">
+                {def.ability.shieldValues[0]} / {def.ability.shieldValues[1]} /{' '}
+                {def.ability.shieldValues[2]}
+              </span>
+            </div>
+          )}
+          {def.ability.healValues && (
+            <div className="flex items-center justify-between">
+              <span className="text-emerald-400 font-semibold uppercase">💚 Heal:</span>
+              <span className="text-emerald-300 font-bold">
+                {def.ability.healValues[0]} / {def.ability.healValues[1]} /{' '}
+                {def.ability.healValues[2]}
+              </span>
+            </div>
+          )}
+        </div>
       </div>
 
       {/* Equipped Items with Rich Hover Tooltip */}
@@ -278,11 +411,25 @@ export const UnitInspector: React.FC<{
               if (itm.stats.startingMana) statBadges.push(`+${itm.stats.startingMana} Mana`);
               if (itm.stats.manaPerSecond) statBadges.push(`+${itm.stats.manaPerSecond} Mana/s`);
 
+              const isSignature = Boolean(itm.signatureUnits && itm.signatureUnits.includes(def.id));
+              const buffPct = itm.signatureUnits && itm.signatureUnits.length === 1 ? 10 : 5;
+
               return (
                 <div key={idx} className="relative group/itm">
-                  <div className="flex items-center gap-1.5 bg-slate-900/90 hover:bg-slate-800 px-2 py-1 rounded-xl border border-slate-700 hover:border-amber-500/50 text-xs text-slate-200 cursor-help transition shadow-sm">
+                  <div
+                    className={`flex items-center gap-1.5 px-2 py-1 rounded-xl border text-xs cursor-help transition shadow-sm ${
+                      isSignature
+                        ? 'bg-amber-950/60 border-amber-400 text-amber-200 shadow-amber-500/10'
+                        : 'bg-slate-900/90 hover:bg-slate-800 border-slate-700 hover:border-amber-500/50 text-slate-200'
+                    }`}
+                  >
                     <span className="text-base leading-none">{itm.icon}</span>
                     <span className="font-semibold text-[11px] text-amber-200">{itm.name}</span>
+                    {isSignature && (
+                      <span className="text-[9px] bg-amber-500 text-slate-950 font-bold px-1 rounded">
+                        +{buffPct}%
+                      </span>
+                    )}
                   </div>
 
                   {/* Rich Floating Item Tooltip */}
@@ -293,9 +440,15 @@ export const UnitInspector: React.FC<{
                         <span className="text-xs font-bold text-amber-300">{itm.name}</span>
                       </div>
                       <span className="text-[9px] uppercase font-bold text-amber-400/80 bg-amber-500/10 px-1.5 py-0.5 rounded border border-amber-500/20">
-                        {itm.isArtifact ? 'Artifact' : 'Component'}
+                        {itm.isArtifact ? 'Completed Item' : 'Component'}
                       </span>
                     </div>
+
+                    {isSignature && (
+                      <div className="text-[10px] text-amber-300 font-bold bg-amber-500/15 px-2 py-1 rounded-lg border border-amber-500/30 flex items-center gap-1">
+                        ✨ Empowered: +{buffPct}% Stats!
+                      </div>
+                    )}
 
                     {statBadges.length > 0 && (
                       <div className="flex items-center gap-1 flex-wrap">
@@ -313,6 +466,12 @@ export const UnitInspector: React.FC<{
                     <p className="text-[11px] text-slate-300 leading-relaxed">
                       {itm.description}
                     </p>
+
+                    {itm.signatureDescription && (
+                      <p className="text-[10px] text-amber-300/80 leading-snug pt-1 border-t border-slate-800">
+                        ✨ {itm.signatureDescription}
+                      </p>
+                    )}
                   </div>
                 </div>
               );

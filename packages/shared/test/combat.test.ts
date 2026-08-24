@@ -99,9 +99,9 @@ describe('Deterministic Combat Simulator', () => {
     const { UNITS } = await import('../src/data/units.js');
     const myrtle = UNITS['moaning_myrtle'];
     assert.ok(myrtle);
-    assert.strictEqual(myrtle.stats.maxMana, 100);
+    assert.strictEqual(myrtle.stats.maxMana, 120);
     assert.strictEqual(myrtle.stats.startingMana, 40);
-    assert.strictEqual(myrtle.ability.manaCost, 100);
+    assert.strictEqual(myrtle.ability.manaCost, 120);
     assert.strictEqual(myrtle.ability.targetType, 'aoe');
     assert.strictEqual(myrtle.ability.radius, 2);
 

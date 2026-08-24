@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import { createPortal } from 'react-dom';
 import { useGameSocket } from '../../context/GameSocketContext';
 import { TRAITS, UNITS } from '@autobattler/shared';
@@ -78,13 +78,21 @@ function getTierStyles(tier: VisualTier, isActive: boolean) {
 
 export const TraitPanel: React.FC<{
   viewingPlayerId?: string;
-}> = ({ viewingPlayerId }) => {
+  onHoverTraitUnitIds?: (unitIds: Set<string> | null) => void;
+}> = ({ viewingPlayerId, onHoverTraitUnitIds }) => {
   const { matchState, playerId } = useGameSocket();
   const [hoveredTrait, setHoveredTrait] = useState<{
     traitId: string;
     top: number;
     left: number;
   } | null>(null);
+  const leaveTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+
+  useEffect(() => {
+    return () => {
+      if (leaveTimeoutRef.current) clearTimeout(leaveTimeoutRef.current);
+    };
+  }, []);
 
   if (!matchState) return null;
 
@@ -107,6 +115,50 @@ export const TraitPanel: React.FC<{
         )
         .sort((a, b) => a.cost - b.cost || a.name.localeCompare(b.name))
     : [];
+
+  const handleMouseEnterTrait = (e: React.MouseEvent<HTMLDivElement>, traitId: string) => {
+    if (leaveTimeoutRef.current) {
+      clearTimeout(leaveTimeoutRef.current);
+      leaveTimeoutRef.current = null;
+    }
+    const rect = e.currentTarget.getBoundingClientRect();
+    const optimalTop = Math.min(rect.top, window.innerHeight - 440);
+    setHoveredTrait({
+      traitId,
+      top: Math.max(12, optimalTop),
+      left: rect.right + 12,
+    });
+
+    const matchingUnitIds = new Set(
+      Object.values(UNITS)
+        .filter((u) => u.origins.includes(traitId as any) || u.classes.includes(traitId as any))
+        .map((u) => u.id)
+    );
+    onHoverTraitUnitIds?.(matchingUnitIds);
+  };
+
+  const handleMouseLeaveTrait = () => {
+    if (leaveTimeoutRef.current) clearTimeout(leaveTimeoutRef.current);
+    leaveTimeoutRef.current = setTimeout(() => {
+      setHoveredTrait(null);
+      onHoverTraitUnitIds?.(null);
+    }, 200);
+  };
+
+  const handleMouseEnterTooltip = () => {
+    if (leaveTimeoutRef.current) {
+      clearTimeout(leaveTimeoutRef.current);
+      leaveTimeoutRef.current = null;
+    }
+  };
+
+  const handleMouseLeaveTooltip = () => {
+    if (leaveTimeoutRef.current) clearTimeout(leaveTimeoutRef.current);
+    leaveTimeoutRef.current = setTimeout(() => {
+      setHoveredTrait(null);
+      onHoverTraitUnitIds?.(null);
+    }, 200);
+  };
 
   return (
     <aside className="w-60 bg-[#070b14] border-r border-slate-800 p-3 flex flex-col gap-2.5 z-20 select-none overflow-y-auto relative scrollbar-thin">
@@ -137,16 +189,8 @@ export const TraitPanel: React.FC<{
             return (
               <div
                 key={t.traitId}
-                onMouseEnter={(e) => {
-                  const rect = e.currentTarget.getBoundingClientRect();
-                  const optimalTop = Math.min(rect.top, window.innerHeight - 440);
-                  setHoveredTrait({
-                    traitId: t.traitId,
-                    top: Math.max(12, optimalTop),
-                    left: rect.right + 12,
-                  });
-                }}
-                onMouseLeave={() => setHoveredTrait(null)}
+                onMouseEnter={(e) => handleMouseEnterTrait(e, t.traitId)}
+                onMouseLeave={handleMouseLeaveTrait}
                 className={`p-2.5 rounded-xl border flex flex-col gap-1.5 transition-all duration-200 cursor-help relative group ${style.card}`}
               >
                 {/* Header: Icon, Name, Count */}
@@ -200,7 +244,9 @@ export const TraitPanel: React.FC<{
         activeTraitDef &&
         createPortal(
           <div
-            className="fixed w-88 max-w-sm bg-[#0a0e1a] border border-slate-700/80 rounded-2xl p-4 shadow-2xl shadow-black z-[99999] animate-fade-in pointer-events-none flex flex-col gap-3 text-left"
+            onMouseEnter={handleMouseEnterTooltip}
+            onMouseLeave={handleMouseLeaveTooltip}
+            className="fixed w-88 max-w-sm bg-[#0a0e1a] border border-slate-700/80 rounded-2xl p-4 shadow-2xl shadow-black z-[99999] animate-fade-in pointer-events-auto flex flex-col gap-3 text-left"
             style={{
               top: `${hoveredTrait.top}px`,
               left: `${hoveredTrait.left}px`,

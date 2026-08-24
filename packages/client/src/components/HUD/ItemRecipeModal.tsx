@@ -50,11 +50,11 @@ export const ItemRecipeModal: React.FC<{ isOpen: boolean; onClose: () => void }>
             </div>
             <div>
               <h2 className="text-xl font-bold font-fantasy text-slate-100 flex items-center gap-2">
-                Hogwarts Artifact Synthesis Book
+                Hogwarts Item Synthesis Book
                 <Sparkles className="w-4 h-4 text-amber-400/80" />
               </h2>
               <p className="text-xs text-slate-400 mt-0.5">
-                Combine any 2 basic magical components to synthesize completed artifacts
+                Combine any 2 basic magical components to synthesize completed items
               </p>
             </div>
           </div>
@@ -120,11 +120,11 @@ export const ItemRecipeModal: React.FC<{ isOpen: boolean; onClose: () => void }>
             </div>
           </div>
 
-          {/* Section 2: Completed Magical Artifacts (Spacious 3-column Grid) */}
+          {/* Section 2: Completed Magical Items (Spacious 3-column Grid) */}
           <div className="flex flex-col gap-2.5">
             <div className="flex items-center justify-between">
               <span className="text-xs font-bold uppercase tracking-wider text-indigo-400">
-                Crafted Artifacts ({displayedArtifacts.length})
+                Completed Items ({displayedArtifacts.length})
               </span>
               {selectedFilter && (
                 <span className="text-xs text-slate-400">
@@ -151,6 +151,11 @@ export const ItemRecipeModal: React.FC<{ isOpen: boolean; onClose: () => void }>
                       <div className="flex flex-col min-w-0">
                         <span className="text-sm font-bold text-slate-100 leading-tight">{art.name}</span>
                         <p className="text-xs text-amber-400/90 mt-1 leading-snug">{art.description}</p>
+                        {art.signatureDescription && (
+                          <p className="text-[11px] text-amber-300/80 mt-1.5 flex items-center gap-1 font-medium bg-amber-950/40 px-2 py-0.5 rounded border border-amber-500/30">
+                            ✨ {art.signatureDescription}
+                          </p>
+                        )}
                       </div>
                     </div>
 

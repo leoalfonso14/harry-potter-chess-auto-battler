@@ -64,6 +64,9 @@ export interface CombatUnit {
   duelistStacks?: number;
   hasGryffindorShielded?: boolean;
   hasWeasleyShielded?: boolean;
+  deathTick?: number;
+  fawkesCastCount?: number;
+  isJumping?: boolean;
   statusEffects: StatusEffect[];
 }
 
@@ -77,6 +80,7 @@ export type CombatEventType =
   | 'HEAL'
   | 'SHIELD'
   | 'STUN'
+  | 'REVIVE'
   | 'OVERTIME'
   | 'DEATH'
   | 'COMBAT_END';
@@ -97,6 +101,7 @@ export interface CombatEvent {
   damageType?: 'physical' | 'magic' | 'true';
   abilityName?: string;
   remainingHp?: number;
+  remainingShield?: number;
   remainingMana?: number;
   meta?: Record<string, unknown>;
 }

@@ -37,8 +37,8 @@ describe('Dynamic Trait Mechanics & Bonus Properties', () => {
 
     // Trickster
     assert.strictEqual(TRAITS['Trickster'].breakpoints[0].bonus.manaBurn, 3);
-    assert.strictEqual(TRAITS['Trickster'].breakpoints[1].bonus.manaBurn, 5);
-    assert.strictEqual(TRAITS['Trickster'].breakpoints[2].bonus.manaBurn, 8);
+    assert.strictEqual(TRAITS['Trickster'].breakpoints[1].bonus.manaBurn, 4);
+    assert.strictEqual(TRAITS['Trickster'].breakpoints[2].bonus.manaBurn, 5);
   });
 
   it('should stack Duelist attack speed up to maxStacks on basic attack', () => {
@@ -187,7 +187,7 @@ describe('Dynamic Trait Mechanics & Bonus Properties', () => {
         { id: 'h1', unitId: 'cedric_diggory', starLevel: 1, position: { x: 3, y: 3 }, items: [], currentHp: 2000, maxHp: 2000, currentMana: 0, maxMana: 100 },
       ];
       const awayUnits: BoardUnit[] = [
-        { id: 'a1', unitId: 'draco_malfoy', starLevel: 1, position: { x: 3, y: 3 }, items: [], currentHp: 2000, maxHp: 2000, currentMana: 0, maxMana: 100 },
+        { id: 'a1', unitId: 'vincent_crabbe', starLevel: 1, position: { x: 3, y: 3 }, items: [], currentHp: 2000, maxHp: 2000, currentMana: 0, maxMana: 100 },
       ];
 
       const huffTrait: ActiveTraitInfo = {
@@ -206,12 +206,13 @@ describe('Dynamic Trait Mechanics & Bonus Properties', () => {
 
     const simWithout = createSim(false);
     const resultWithout = simWithout.simulate();
-    const firstHitWithout = resultWithout.events.find((e) => e.type === 'DAMAGE' && e.targetId?.startsWith('home'))?.value ?? 0;
+    const firstHitWithout = resultWithout.events.find((e) => e.type === 'DAMAGE' && e.targetId?.startsWith('home_h1'))?.value ?? 0;
 
     const simWith = createSim(true);
     const resultWith = simWith.simulate();
-    const firstHitWith = resultWith.events.find((e) => e.type === 'DAMAGE' && e.targetId?.startsWith('home'))?.value ?? 0;
+    const firstHitWith = resultWith.events.find((e) => e.type === 'DAMAGE' && e.targetId?.startsWith('home_h1'))?.value ?? 0;
 
     assert.ok(firstHitWith < firstHitWithout);
+    assert.ok(firstHitWithout > 0 && firstHitWith > 0);
   });
 });

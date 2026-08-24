@@ -31,6 +31,8 @@ export interface ItemDefinition {
   description: string;
   stats: ItemStats;
   icon: string;
+  signatureUnits?: string[]; // Champion IDs that gain 25% empowered bonus stats from this item
+  signatureDescription?: string;
   passiveEffect?: {
     type: string;
     value: number;

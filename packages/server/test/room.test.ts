@@ -17,6 +17,7 @@ describe('AutoBattlerRoom Game Lifecycle & Stage System', () => {
     assert.ok(room.state.players['p1']);
     assert.strictEqual(room.state.players['p1'].name, 'Player1');
     assert.strictEqual(room.state.players['p1'].health, 100);
+    room.dispose();
   });
 
   it('should fill lobby with 7 bots, start with 0 gold, 1 starting unit on bench, and PvE mode', () => {
@@ -52,6 +53,7 @@ describe('AutoBattlerRoom Game Lifecycle & Stage System', () => {
     room.handleAction('human_1', { type: 'SELL_UNIT', source: 'bench', x: 0 });
     assert.strictEqual(p.bench[0], null, 'Unit can be sold on Round 1-2+');
     assert.strictEqual(p.gold, 1);
+    room.dispose();
   });
 
   it('should allow buying units and equipping items during COMBAT phase', () => {
@@ -84,6 +86,7 @@ describe('AutoBattlerRoom Game Lifecycle & Stage System', () => {
     });
     assert.strictEqual(p.itemBench[0], null);
     assert.deepStrictEqual(p.bench[0]?.items, ['wand_core']);
+    room.dispose();
   });
 
   it('should auto-deploy bench units to board on combat start up to level capacity', () => {
@@ -133,6 +136,7 @@ describe('AutoBattlerRoom Game Lifecycle & Stage System', () => {
     assert.strictEqual(boardCount, 2);
     assert.strictEqual(p.bench[0], null);
     assert.strictEqual(p.bench[1], null);
+    room.dispose();
   });
 
   it('should accumulate exactly 12 components and 23 gold across all PvE rounds up to Stage 4-7', () => {
@@ -158,6 +162,7 @@ describe('AutoBattlerRoom Game Lifecycle & Stage System', () => {
 
     assert.strictEqual(totalComps, 12, 'Total PvE components by stage 4-7 must equal 12');
     assert.strictEqual(totalGold, 23, 'Total PvE bonus gold by stage 4-7 must equal 23');
+    room.dispose();
   });
 
   it('should support SURRENDER action and seamless client reconnection on refresh', () => {
@@ -181,5 +186,6 @@ describe('AutoBattlerRoom Game Lifecycle & Stage System', () => {
     assert.strictEqual(p1.isEliminated, true);
     assert.strictEqual(p1.health, 0);
     assert.strictEqual(p1.placement, 8);
+    room.dispose();
   });
 });

@@ -1,4 +1,4 @@
-import { WebSocket } from 'ws';
+import { WebSocket } from "ws";
 import {
   MatchState,
   PlayerState,
@@ -19,8 +19,8 @@ import {
   XP_COST,
   XP_GAIN,
   checkAndCombineUnits,
-} from '@autobattler/shared';
-import { BotController } from '../bot/BotController.js';
+} from "@autobattler/shared";
+import { BotController } from "../bot/BotController.js";
 
 const PLANNING_DURATION = 30;
 const COMBAT_DURATION = 30;
@@ -66,7 +66,7 @@ export class AutoBattlerRoom {
       roundInStage: 1,
       isPveRound: true,
       isChoiceRound: false,
-      phase: 'LOBBY',
+      phase: "LOBBY",
       phaseTimeRemaining: PLANNING_DURATION,
       phaseDuration: PLANNING_DURATION,
       players: {},
@@ -80,7 +80,11 @@ export class AutoBattlerRoom {
     this.clients.set(playerId, ws);
 
     if (!this.state.players[playerId]) {
-      this.state.players[playerId] = this.createPlayerState(playerId, name, false);
+      this.state.players[playerId] = this.createPlayerState(
+        playerId,
+        name,
+        false,
+      );
       this.state.playerOrder.push(playerId);
     }
 
@@ -94,21 +98,28 @@ export class AutoBattlerRoom {
 
   public fillWithBots(totalPlayers = 8): void {
     const botNames = [
-      'ValiantBot',
-      'DragonMaster',
-      'ShadowNinja',
-      'FrostQueen',
-      'ArcaneMage',
-      'IronTitan',
-      'GaleRanger',
+      "ValiantBot",
+      "DragonMaster",
+      "ShadowNinja",
+      "FrostQueen",
+      "ArcaneMage",
+      "IronTitan",
+      "GaleRanger",
     ];
 
     let botIndex = 0;
-    while (Object.keys(this.state.players).length < totalPlayers && botIndex < botNames.length) {
+    while (
+      Object.keys(this.state.players).length < totalPlayers &&
+      botIndex < botNames.length
+    ) {
       const botId = `bot_${botIndex + 1}`;
       if (!this.state.players[botId]) {
         const botName = botNames[botIndex];
-        this.state.players[botId] = this.createPlayerState(botId, botName, true);
+        this.state.players[botId] = this.createPlayerState(
+          botId,
+          botName,
+          true,
+        );
         this.state.playerOrder.push(botId);
       }
       botIndex++;
@@ -116,10 +127,10 @@ export class AutoBattlerRoom {
   }
 
   public startGame(): void {
-    if (this.state.phase !== 'LOBBY') return;
+    if (this.state.phase !== "LOBBY") return;
 
     this.fillWithBots(8);
-    this.state.phase = 'PLANNING';
+    this.state.phase = "PLANNING";
     this.state.round = 1;
     this.state.stage = 1;
     this.state.roundInStage = 1;
@@ -130,7 +141,11 @@ export class AutoBattlerRoom {
 
     // Filter starting 1-cost champion roster
     const starting1Costs = Object.values(UNITS).filter(
-      (u) => u.cost === 1 && !['cornish_pixie', 'garden_gnome', 'acromantula_hatchling'].includes(u.id)
+      (u) =>
+        u.cost === 1 &&
+        !["cornish_pixie", "garden_gnome", "acromantula_hatchling"].includes(
+          u.id,
+        ),
     );
 
     // Initial setup: 0 gold, 1 starting 1-cost unit placed on bench
@@ -140,7 +155,9 @@ export class AutoBattlerRoom {
       p.xp = 0;
       p.shopUnits = this.pool.drawShop(p.level, 5);
 
-      const randomDef = starting1Costs[Math.floor(Math.random() * starting1Costs.length)] || starting1Costs[0];
+      const randomDef =
+        starting1Costs[Math.floor(Math.random() * starting1Costs.length)] ||
+        starting1Costs[0];
       const startUnit: BoardUnit = {
         id: `unit_${p.id}_init_${Math.random().toString(36).substring(2, 6)}`,
         unitId: randomDef.id,
@@ -161,6 +178,13 @@ export class AutoBattlerRoom {
     this.startLoop();
   }
 
+  public dispose(): void {
+    if (this.timerInterval) {
+      clearInterval(this.timerInterval);
+      this.timerInterval = null;
+    }
+  }
+
   private startLoop(): void {
     if (this.timerInterval) clearInterval(this.timerInterval);
 
@@ -170,20 +194,28 @@ export class AutoBattlerRoom {
   }
 
   private tick(): void {
-    if (this.state.phase === 'GAME_OVER') {
+    if (this.state.phase === "GAME_OVER") {
       if (this.timerInterval) clearInterval(this.timerInterval);
       return;
     }
 
     this.state.phaseTimeRemaining--;
 
-    if (this.state.phase === 'PLANNING') {
+    if (this.state.phase === "PLANNING") {
       // Execute bot AI behaviors periodically during planning
       if (this.state.phaseTimeRemaining % 5 === 0) {
         for (const p of Object.values(this.state.players)) {
           if (p.isBot && !p.isEliminated) {
-            BotController.executeBotTurn(p, this.pool);
-            if (p.armoryChoices && (!p.armoryChoices.chosenComponent || !p.armoryChoices.chosenUnit)) {
+            BotController.executeBotTurn(
+              p,
+              this.pool,
+              this.state.stage,
+              this.state.roundInStage,
+            );
+            if (
+              p.armoryChoices &&
+              (!p.armoryChoices.chosenComponent || !p.armoryChoices.chosenUnit)
+            ) {
               this.executeBotArmoryChoice(p);
             }
           }
@@ -202,18 +234,21 @@ export class AutoBattlerRoom {
       if (this.state.phaseTimeRemaining <= 0) {
         this.transitionToCombat();
       }
-    } else if (this.state.phase === 'COMBAT') {
+    } else if (this.state.phase === "COMBAT") {
       const elapsedCombatTime = COMBAT_DURATION - this.state.phaseTimeRemaining;
 
       // If all matches in the room finished, shorten remaining time to 2 seconds
-      if (elapsedCombatTime >= this.maxCombatDuration && this.state.phaseTimeRemaining > 2) {
+      if (
+        elapsedCombatTime >= this.maxCombatDuration &&
+        this.state.phaseTimeRemaining > 2
+      ) {
         this.state.phaseTimeRemaining = 2;
       }
 
       if (this.state.phaseTimeRemaining <= 0) {
         this.transitionToResolution();
       }
-    } else if (this.state.phase === 'RESOLUTION') {
+    } else if (this.state.phase === "RESOLUTION") {
       if (this.state.phaseTimeRemaining <= 0) {
         this.transitionToPlanning();
       }
@@ -265,56 +300,239 @@ export class AutoBattlerRoom {
   private getPveCreeps(stage: number, roundInStage: number): BoardUnit[] {
     if (stage === 1) {
       if (roundInStage === 1) {
-        const def = UNITS['cornish_pixie'];
+        const def = UNITS["cornish_pixie"];
         return [
-          { id: 'pve_pixie_1', unitId: 'cornish_pixie', starLevel: 1, position: { x: 3, y: 0 }, items: [], currentHp: def.stats.hp[0], maxHp: def.stats.hp[0], currentMana: 0, maxMana: def.stats.maxMana },
-          { id: 'pve_pixie_2', unitId: 'cornish_pixie', starLevel: 1, position: { x: 4, y: 0 }, items: [], currentHp: def.stats.hp[0], maxHp: def.stats.hp[0], currentMana: 0, maxMana: def.stats.maxMana },
+          {
+            id: "pve_pixie_1",
+            unitId: "cornish_pixie",
+            starLevel: 1,
+            position: { x: 3, y: 0 },
+            items: [],
+            currentHp: def.stats.hp[0],
+            maxHp: def.stats.hp[0],
+            currentMana: 0,
+            maxMana: def.stats.maxMana,
+          },
+          {
+            id: "pve_pixie_2",
+            unitId: "cornish_pixie",
+            starLevel: 1,
+            position: { x: 4, y: 0 },
+            items: [],
+            currentHp: def.stats.hp[0],
+            maxHp: def.stats.hp[0],
+            currentMana: 0,
+            maxMana: def.stats.maxMana,
+          },
         ];
       } else if (roundInStage === 2) {
-        const def = UNITS['cornish_pixie'];
+        const def = UNITS["cornish_pixie"];
         return [
-          { id: 'pve_pixie_1', unitId: 'cornish_pixie', starLevel: 1, position: { x: 2, y: 0 }, items: [], currentHp: def.stats.hp[0], maxHp: def.stats.hp[0], currentMana: 0, maxMana: def.stats.maxMana },
-          { id: 'pve_pixie_2', unitId: 'cornish_pixie', starLevel: 1, position: { x: 4, y: 0 }, items: [], currentHp: def.stats.hp[0], maxHp: def.stats.hp[0], currentMana: 0, maxMana: def.stats.maxMana },
-          { id: 'pve_pixie_3', unitId: 'cornish_pixie', starLevel: 1, position: { x: 5, y: 0 }, items: [], currentHp: def.stats.hp[0], maxHp: def.stats.hp[0], currentMana: 0, maxMana: def.stats.maxMana },
+          {
+            id: "pve_pixie_1",
+            unitId: "cornish_pixie",
+            starLevel: 1,
+            position: { x: 2, y: 0 },
+            items: [],
+            currentHp: def.stats.hp[0],
+            maxHp: def.stats.hp[0],
+            currentMana: 0,
+            maxMana: def.stats.maxMana,
+          },
+          {
+            id: "pve_pixie_2",
+            unitId: "cornish_pixie",
+            starLevel: 1,
+            position: { x: 4, y: 0 },
+            items: [],
+            currentHp: def.stats.hp[0],
+            maxHp: def.stats.hp[0],
+            currentMana: 0,
+            maxMana: def.stats.maxMana,
+          },
+          {
+            id: "pve_pixie_3",
+            unitId: "cornish_pixie",
+            starLevel: 1,
+            position: { x: 5, y: 0 },
+            items: [],
+            currentHp: def.stats.hp[0],
+            maxHp: def.stats.hp[0],
+            currentMana: 0,
+            maxMana: def.stats.maxMana,
+          },
         ];
       } else {
-        const gnomeDef = UNITS['garden_gnome'];
-        const spiderDef = UNITS['acromantula_hatchling'];
+        const gnomeDef = UNITS["garden_gnome"];
+        const spiderDef = UNITS["acromantula_hatchling"];
         return [
-          { id: 'pve_gnome_1', unitId: 'garden_gnome', starLevel: 1, position: { x: 2, y: 0 }, items: [], currentHp: gnomeDef.stats.hp[0], maxHp: gnomeDef.stats.hp[0], currentMana: 0, maxMana: gnomeDef.stats.maxMana },
-          { id: 'pve_spider_1', unitId: 'acromantula_hatchling', starLevel: 1, position: { x: 4, y: 0 }, items: [], currentHp: spiderDef.stats.hp[0], maxHp: spiderDef.stats.hp[0], currentMana: 0, maxMana: spiderDef.stats.maxMana },
-          { id: 'pve_gnome_2', unitId: 'garden_gnome', starLevel: 1, position: { x: 5, y: 0 }, items: [], currentHp: gnomeDef.stats.hp[0], maxHp: gnomeDef.stats.hp[0], currentMana: 0, maxMana: gnomeDef.stats.maxMana },
+          {
+            id: "pve_gnome_1",
+            unitId: "garden_gnome",
+            starLevel: 1,
+            position: { x: 2, y: 0 },
+            items: [],
+            currentHp: gnomeDef.stats.hp[0],
+            maxHp: gnomeDef.stats.hp[0],
+            currentMana: 0,
+            maxMana: gnomeDef.stats.maxMana,
+          },
+          {
+            id: "pve_spider_1",
+            unitId: "acromantula_hatchling",
+            starLevel: 1,
+            position: { x: 4, y: 0 },
+            items: [],
+            currentHp: spiderDef.stats.hp[0],
+            maxHp: spiderDef.stats.hp[0],
+            currentMana: 0,
+            maxMana: spiderDef.stats.maxMana,
+          },
+          {
+            id: "pve_gnome_2",
+            unitId: "garden_gnome",
+            starLevel: 1,
+            position: { x: 5, y: 0 },
+            items: [],
+            currentHp: gnomeDef.stats.hp[0],
+            maxHp: gnomeDef.stats.hp[0],
+            currentMana: 0,
+            maxMana: gnomeDef.stats.maxMana,
+          },
         ];
       }
     } else if (stage === 2) {
       // Stage 2-7: 3x Mountain Gnomes
-      const def = UNITS['garden_gnome'];
+      const def = UNITS["garden_gnome"];
       return [
-        { id: 'pve_g1', unitId: 'garden_gnome', starLevel: 2, position: { x: 2, y: 0 }, items: [], currentHp: 900, maxHp: 900, currentMana: 0, maxMana: def.stats.maxMana },
-        { id: 'pve_g2', unitId: 'garden_gnome', starLevel: 2, position: { x: 4, y: 0 }, items: [], currentHp: 900, maxHp: 900, currentMana: 0, maxMana: def.stats.maxMana },
-        { id: 'pve_g3', unitId: 'garden_gnome', starLevel: 2, position: { x: 5, y: 0 }, items: [], currentHp: 900, maxHp: 900, currentMana: 0, maxMana: def.stats.maxMana },
+        {
+          id: "pve_g1",
+          unitId: "garden_gnome",
+          starLevel: 2,
+          position: { x: 2, y: 0 },
+          items: [],
+          currentHp: 900,
+          maxHp: 900,
+          currentMana: 0,
+          maxMana: def.stats.maxMana,
+        },
+        {
+          id: "pve_g2",
+          unitId: "garden_gnome",
+          starLevel: 2,
+          position: { x: 4, y: 0 },
+          items: [],
+          currentHp: 900,
+          maxHp: 900,
+          currentMana: 0,
+          maxMana: def.stats.maxMana,
+        },
+        {
+          id: "pve_g3",
+          unitId: "garden_gnome",
+          starLevel: 2,
+          position: { x: 5, y: 0 },
+          items: [],
+          currentHp: 900,
+          maxHp: 900,
+          currentMana: 0,
+          maxMana: def.stats.maxMana,
+        },
       ];
     } else if (stage === 3) {
       // Stage 3-7: 4x Acromantulas
-      const def = UNITS['acromantula_hatchling'];
+      const def = UNITS["acromantula_hatchling"];
       return [
-        { id: 'pve_s1', unitId: 'acromantula_hatchling', starLevel: 2, position: { x: 1, y: 0 }, items: [], currentHp: 1100, maxHp: 1100, currentMana: 0, maxMana: def.stats.maxMana },
-        { id: 'pve_s2', unitId: 'acromantula_hatchling', starLevel: 2, position: { x: 3, y: 0 }, items: [], currentHp: 1100, maxHp: 1100, currentMana: 0, maxMana: def.stats.maxMana },
-        { id: 'pve_s3', unitId: 'acromantula_hatchling', starLevel: 2, position: { x: 5, y: 0 }, items: [], currentHp: 1100, maxHp: 1100, currentMana: 0, maxMana: def.stats.maxMana },
-        { id: 'pve_s4', unitId: 'acromantula_hatchling', starLevel: 2, position: { x: 6, y: 0 }, items: [], currentHp: 1100, maxHp: 1100, currentMana: 0, maxMana: def.stats.maxMana },
+        {
+          id: "pve_s1",
+          unitId: "acromantula_hatchling",
+          starLevel: 2,
+          position: { x: 1, y: 0 },
+          items: [],
+          currentHp: 1100,
+          maxHp: 1100,
+          currentMana: 0,
+          maxMana: def.stats.maxMana,
+        },
+        {
+          id: "pve_s2",
+          unitId: "acromantula_hatchling",
+          starLevel: 2,
+          position: { x: 3, y: 0 },
+          items: [],
+          currentHp: 1100,
+          maxHp: 1100,
+          currentMana: 0,
+          maxMana: def.stats.maxMana,
+        },
+        {
+          id: "pve_s3",
+          unitId: "acromantula_hatchling",
+          starLevel: 2,
+          position: { x: 5, y: 0 },
+          items: [],
+          currentHp: 1100,
+          maxHp: 1100,
+          currentMana: 0,
+          maxMana: def.stats.maxMana,
+        },
+        {
+          id: "pve_s4",
+          unitId: "acromantula_hatchling",
+          starLevel: 2,
+          position: { x: 6, y: 0 },
+          items: [],
+          currentHp: 1100,
+          maxHp: 1100,
+          currentMana: 0,
+          maxMana: def.stats.maxMana,
+        },
       ];
     } else {
       // Stage 4-7+: 1 Boss + 2 Guardians
-      const def = UNITS['acromantula_hatchling'];
+      const def = UNITS["acromantula_hatchling"];
       return [
-        { id: 'pve_boss', unitId: 'acromantula_hatchling', starLevel: 3, position: { x: 4, y: 0 }, items: ['elder_wand'], currentHp: 3500, maxHp: 3500, currentMana: 0, maxMana: 100 },
-        { id: 'pve_minion_1', unitId: 'garden_gnome', starLevel: 2, position: { x: 2, y: 0 }, items: [], currentHp: 1200, maxHp: 1200, currentMana: 0, maxMana: 90 },
-        { id: 'pve_minion_2', unitId: 'garden_gnome', starLevel: 2, position: { x: 5, y: 0 }, items: [], currentHp: 1200, maxHp: 1200, currentMana: 0, maxMana: 90 },
+        {
+          id: "pve_boss",
+          unitId: "acromantula_hatchling",
+          starLevel: 3,
+          position: { x: 4, y: 0 },
+          items: ["elder_wand"],
+          currentHp: 3500,
+          maxHp: 3500,
+          currentMana: 0,
+          maxMana: 100,
+        },
+        {
+          id: "pve_minion_1",
+          unitId: "garden_gnome",
+          starLevel: 2,
+          position: { x: 2, y: 0 },
+          items: [],
+          currentHp: 1200,
+          maxHp: 1200,
+          currentMana: 0,
+          maxMana: 90,
+        },
+        {
+          id: "pve_minion_2",
+          unitId: "garden_gnome",
+          starLevel: 2,
+          position: { x: 5, y: 0 },
+          items: [],
+          currentHp: 1200,
+          maxHp: 1200,
+          currentMana: 0,
+          maxMana: 90,
+        },
       ];
     }
   }
 
-  private generateArmoryChoices(stage: number): { components: string[]; units: string[] } {
+  private generateArmoryChoices(stage: number): {
+    components: string[];
+    units: string[];
+  } {
     const baseItemKeys = Object.keys(BASE_ITEMS) as BaseItemId[];
     // Pick 5 random components
     const shuffledItems = [...baseItemKeys].sort(() => Math.random() - 0.5);
@@ -331,7 +549,11 @@ export class AutoBattlerRoom {
     else if (stage >= 5) allowedCosts = [4, 5];
 
     const eligibleUnits = Object.values(UNITS).filter(
-      (u) => allowedCosts.includes(u.cost) && !['cornish_pixie', 'garden_gnome', 'acromantula_hatchling'].includes(u.id)
+      (u) =>
+        allowedCosts.includes(u.cost) &&
+        !["cornish_pixie", "garden_gnome", "acromantula_hatchling"].includes(
+          u.id,
+        ),
     );
 
     const shuffledUnits = [...eligibleUnits].sort(() => Math.random() - 0.5);
@@ -345,10 +567,17 @@ export class AutoBattlerRoom {
 
   private executeBotArmoryChoice(bot: PlayerState): void {
     if (!bot.armoryChoices) return;
-    if (!bot.armoryChoices.chosenComponent && bot.armoryChoices.components.length > 0) {
+    if (
+      !bot.armoryChoices.chosenComponent &&
+      bot.armoryChoices.components.length > 0
+    ) {
       const comp = bot.armoryChoices.components[0];
       const emptySlot = bot.itemBench.indexOf(null);
-      if (emptySlot !== -1) bot.itemBench[emptySlot] = comp;
+      if (emptySlot !== -1) {
+        bot.itemBench[emptySlot] = comp;
+      } else {
+        bot.itemBench.push(comp);
+      }
       bot.armoryChoices.chosenComponent = true;
     }
     if (!bot.armoryChoices.chosenUnit && bot.armoryChoices.units.length > 0) {
@@ -373,13 +602,73 @@ export class AutoBattlerRoom {
     }
   }
 
+  private autoResolveUnselectedArmoryChoices(): void {
+    if (!this.state.isChoiceRound) return;
+    for (const player of Object.values(this.state.players)) {
+      if (player.isEliminated || !player.armoryChoices) continue;
+
+      // Auto-pick random unselected component
+      if (
+        !player.armoryChoices.chosenComponent &&
+        player.armoryChoices.components.length > 0
+      ) {
+        const randomComp =
+          player.armoryChoices.components[
+            Math.floor(Math.random() * player.armoryChoices.components.length)
+          ];
+        const emptySlot = player.itemBench.indexOf(null);
+        if (emptySlot !== -1) {
+          player.itemBench[emptySlot] = randomComp;
+        } else {
+          player.itemBench.push(randomComp);
+        }
+        player.armoryChoices.chosenComponent = true;
+      }
+
+      // Auto-pick random unselected unit
+      if (
+        !player.armoryChoices.chosenUnit &&
+        player.armoryChoices.units.length > 0
+      ) {
+        const randomUnitId =
+          player.armoryChoices.units[
+            Math.floor(Math.random() * player.armoryChoices.units.length)
+          ];
+        const emptyBench = player.bench.indexOf(null);
+        const def = UNITS[randomUnitId];
+        if (emptyBench !== -1 && def) {
+          player.bench[emptyBench] = {
+            id: `unit_${player.id}_armory_auto_${Math.random().toString(36).substring(2, 6)}`,
+            unitId: randomUnitId,
+            starLevel: 1,
+            position: { x: emptyBench, y: 0 },
+            items: [],
+            currentHp: def.stats.hp[0],
+            maxHp: def.stats.hp[0],
+            currentMana: def.stats.startingMana,
+            maxMana: def.stats.maxMana,
+          };
+          checkAndCombineUnits(player);
+        } else if (def) {
+          player.gold += def.cost;
+        }
+        player.armoryChoices.chosenUnit = true;
+      }
+    }
+  }
+
   private transitionToCombat(): void {
-    this.state.phase = 'COMBAT';
+    // Auto-resolve any pending armory/choice selections for players who did not choose in 45s
+    this.autoResolveUnselectedArmoryChoices();
+
+    this.state.phase = "COMBAT";
     this.state.phaseTimeRemaining = COMBAT_DURATION;
     this.state.phaseDuration = COMBAT_DURATION;
     this.state.combatResults = {};
 
-    const activePlayers = Object.values(this.state.players).filter((p) => !p.isEliminated);
+    const activePlayers = Object.values(this.state.players).filter(
+      (p) => !p.isEliminated,
+    );
 
     // 1. Auto-fill board from bench for all active players
     for (const p of activePlayers) {
@@ -392,7 +681,10 @@ export class AutoBattlerRoom {
 
     if (isPve) {
       // PvE Creep Combat
-      const pveCreeps = this.getPveCreeps(this.state.stage, this.state.roundInStage);
+      const pveCreeps = this.getPveCreeps(
+        this.state.stage,
+        this.state.roundInStage,
+      );
 
       for (const p of activePlayers) {
         const pUnits = this.getBoardUnits(p);
@@ -400,12 +692,12 @@ export class AutoBattlerRoom {
 
         const sim = new CombatSimulator(
           p.id,
-          'pve_creeps',
+          "pve_creeps",
           pUnits,
           pveCreeps,
           p.activeTraits,
           [],
-          this.state.stage
+          this.state.stage,
         );
 
         const result = sim.simulate();
@@ -430,7 +722,9 @@ export class AutoBattlerRoom {
       }
 
       for (const p of activePlayers) {
-        const opp = p.opponentId ? this.state.players[p.opponentId] : activePlayers[0];
+        const opp = p.opponentId
+          ? this.state.players[p.opponentId]
+          : activePlayers[0];
         if (!opp) continue;
 
         const pUnits = this.getBoardUnits(p);
@@ -443,7 +737,7 @@ export class AutoBattlerRoom {
           oppUnits,
           p.activeTraits,
           opp.activeTraits,
-          this.state.stage
+          this.state.stage,
         );
 
         const result = sim.simulate();
@@ -454,13 +748,13 @@ export class AutoBattlerRoom {
 
     // Determine the duration of the longest battle in this round
     const durations = Object.values(this.state.combatResults).map(
-      (r) => r.durationInSeconds || 15
+      (r) => r.durationInSeconds || 15,
     );
     this.maxCombatDuration = Math.max(3, Math.ceil(Math.max(...durations)));
   }
 
   private transitionToResolution(): void {
-    this.state.phase = 'RESOLUTION';
+    this.state.phase = "RESOLUTION";
     this.state.phaseTimeRemaining = RESOLUTION_DURATION;
     this.state.phaseDuration = RESOLUTION_DURATION;
 
@@ -472,7 +766,8 @@ export class AutoBattlerRoom {
       if (this.state.stage === 1) {
         compCount = this.pveRewards.stage1.components;
         // Last fight of Stage 1 (1-3) gives 1 gold instead of 2
-        goldBonus = this.state.roundInStage === 3 ? 1 : this.pveRewards.stage1.gold;
+        goldBonus =
+          this.state.roundInStage === 3 ? 1 : this.pveRewards.stage1.gold;
       } else if (this.state.stage === 2) {
         compCount = this.pveRewards.stage2_7.components;
         goldBonus = this.pveRewards.stage2_7.gold;
@@ -494,21 +789,24 @@ export class AutoBattlerRoom {
         const res = this.state.combatResults[p.id];
         if (!res) continue;
 
-        if (res.winner === 'home') {
+        if (res.winner === "home") {
           // PvE Victory: grant full bonus gold + component items
           p.gold += goldBonus;
 
           for (let i = 0; i < compCount; i++) {
             const emptySlot = p.itemBench.indexOf(null);
             if (emptySlot !== -1) {
-              p.itemBench[emptySlot] = baseItemKeys[Math.floor(Math.random() * baseItemKeys.length)];
+              p.itemBench[emptySlot] =
+                baseItemKeys[Math.floor(Math.random() * baseItemKeys.length)];
             } else {
-              p.gold += 1;
+              p.itemBench.push(
+                baseItemKeys[Math.floor(Math.random() * baseItemKeys.length)]
+              );
             }
           }
         } else {
           // PvE Tie or Defeat: take damage and receive only partial consolation gold (no components)
-          p.health = Math.max(0, p.health - (res.winner === 'tie' ? 2 : 4));
+          p.health = Math.max(0, p.health - (res.winner === "tie" ? 2 : 4));
           p.gold += 1;
         }
       }
@@ -519,23 +817,27 @@ export class AutoBattlerRoom {
         const result = this.state.combatResults[p.id];
         if (!result) continue;
 
-        if (result.winner === 'home') {
+        if (result.winner === "home") {
           // Player won their home battle: +1 Win Gold awarded instantly
           p.gold += 1;
           p.streak = p.streak >= 0 ? p.streak + 1 : 1;
 
           // Malfoy (3) Synergy Bonus: +2 Gold on win with a surviving Malfoy
-          const malfoyTrait = p.activeTraits.find((t) => t.traitId === 'Malfoy');
+          const malfoyTrait = p.activeTraits.find(
+            (t) => t.traitId === "Malfoy",
+          );
           if (malfoyTrait && malfoyTrait.count >= 3) {
-            const hasSurvivingMalfoy = Object.values(result.homeUnitSummaries).some((u) => {
+            const hasSurvivingMalfoy = Object.values(
+              result.homeUnitSummaries,
+            ).some((u) => {
               const def = UNITS[u.unitDefId];
-              return def?.origins.includes('Malfoy') && u.survived;
+              return def?.classes.includes("Malfoy") && u.survived;
             });
             if (hasSurvivingMalfoy) {
-              p.gold += 2;
+              p.gold += 1;
             }
           }
-        } else if (result.winner === 'away') {
+        } else if (result.winner === "away") {
           // Player lost their home battle
           p.streak = p.streak <= 0 ? p.streak - 1 : -1;
           p.health = Math.max(0, p.health - result.damageToLoser);
@@ -567,20 +869,22 @@ export class AutoBattlerRoom {
     }
 
     // Check for match winner
-    const alivePlayers = Object.values(this.state.players).filter((p) => !p.isEliminated);
+    const alivePlayers = Object.values(this.state.players).filter(
+      (p) => !p.isEliminated,
+    );
     if (alivePlayers.length === 1) {
-      this.state.phase = 'GAME_OVER';
+      this.state.phase = "GAME_OVER";
       this.state.winnerId = alivePlayers[0].id;
       alivePlayers[0].placement = 1;
     } else if (alivePlayers.length === 0) {
-      this.state.phase = 'GAME_OVER';
+      this.state.phase = "GAME_OVER";
     }
 
     this.updateLeaderboardOrder();
   }
 
   private transitionToPlanning(): void {
-    this.state.phase = 'PLANNING';
+    this.state.phase = "PLANNING";
 
     // Advance round & stage (Stage 1 has 3 rounds, Stage 2+ has 7 rounds)
     this.state.round++;
@@ -594,19 +898,20 @@ export class AutoBattlerRoom {
       this.state.roundInStage = 1;
     }
 
-    // Prep time duration: Round 1-1 is 6s, subsequent Stage 1 creep rounds (1-2, 1-3) are 18s, Stage 2+ is 30s
-    const planningDuration =
-      this.state.stage === 1
-        ? this.state.roundInStage === 1
-          ? 6
-          : 18
-        : PLANNING_DURATION;
+    this.state.isPveRound = this.isCurrentRoundPve();
+    this.state.isChoiceRound = this.isCurrentRoundChoice();
+
+    // Prep time duration: Choice round (X-4) is 45s, Round 1-1 is 6s, Stage 1 creeps are 18s, Stage 2+ is 30s
+    const planningDuration = this.state.isChoiceRound
+      ? 45
+      : this.state.stage === 1
+      ? this.state.roundInStage === 1
+        ? 6
+        : 18
+      : PLANNING_DURATION;
 
     this.state.phaseTimeRemaining = planningDuration;
     this.state.phaseDuration = planningDuration;
-
-    this.state.isPveRound = this.isCurrentRoundPve();
-    this.state.isChoiceRound = this.isCurrentRoundChoice();
 
     // If Armory / Choice Round X-4, generate choices for all alive players
     if (this.state.isChoiceRound) {
@@ -649,27 +954,29 @@ export class AutoBattlerRoom {
     const player = this.state.players[playerId];
     if (!player || player.isEliminated) return;
 
-    if (action.type === 'START_GAME') {
-      if (this.state.phase === 'LOBBY') {
+    if (action.type === "START_GAME") {
+      if (this.state.phase === "LOBBY") {
         this.startGame();
       }
       return;
     }
 
     // Armory choices can be made in PLANNING
-    if (action.type === 'CHOOSE_ARMORY_COMPONENT') {
+    if (action.type === "CHOOSE_ARMORY_COMPONENT") {
       if (player.armoryChoices && !player.armoryChoices.chosenComponent) {
         const emptySlot = player.itemBench.indexOf(null);
         if (emptySlot !== -1) {
           player.itemBench[emptySlot] = action.componentId;
-          player.armoryChoices.chosenComponent = true;
+        } else {
+          player.itemBench.push(action.componentId);
         }
+        player.armoryChoices.chosenComponent = true;
       }
       this.broadcastState();
       return;
     }
 
-    if (action.type === 'CHOOSE_ARMORY_UNIT') {
+    if (action.type === "CHOOSE_ARMORY_UNIT") {
       if (player.armoryChoices && !player.armoryChoices.chosenUnit) {
         const emptyBench = player.bench.indexOf(null);
         const def = UNITS[action.unitId];
@@ -686,7 +993,7 @@ export class AutoBattlerRoom {
             maxMana: def.stats.maxMana,
           };
           player.armoryChoices.chosenUnit = true;
-          checkAndCombineUnits(player, this.state.phase === 'COMBAT');
+          checkAndCombineUnits(player, this.state.phase === "COMBAT");
         }
       }
       this.broadcastState();
@@ -694,15 +1001,16 @@ export class AutoBattlerRoom {
     }
 
     // Moving units on/off the board is restricted to PLANNING phase, but bench-to-bench swapping is allowed during COMBAT
-    if (action.type === 'MOVE_UNIT') {
-      const isBenchToBench = action.from.area === 'bench' && action.to.area === 'bench';
-      if (this.state.phase !== 'PLANNING' && !isBenchToBench) {
+    if (action.type === "MOVE_UNIT") {
+      const isBenchToBench =
+        action.from.area === "bench" && action.to.area === "bench";
+      if (this.state.phase !== "PLANNING" && !isBenchToBench) {
         return;
       }
     }
 
     switch (action.type) {
-      case 'BUY_UNIT': {
+      case "BUY_UNIT": {
         const unitId = player.shopUnits[action.shopSlot];
         if (!unitId) return;
 
@@ -714,6 +1022,7 @@ export class AutoBattlerRoom {
 
         player.gold -= def.cost;
         player.shopUnits[action.shopSlot] = null;
+        this.pool.decrementPool(unitId);
 
         const newUnit: BoardUnit = {
           id: `unit_${playerId}_${Date.now()}_${Math.random().toString(36).substring(2, 6)}`,
@@ -730,12 +1039,12 @@ export class AutoBattlerRoom {
         player.bench[emptyBenchIdx] = newUnit;
 
         // If in COMBAT, only combine units on bench (don't disturb combat units)
-        const isBenchOnly = this.state.phase === 'COMBAT';
+        const isBenchOnly = this.state.phase === "COMBAT";
         checkAndCombineUnits(player, isBenchOnly);
         break;
       }
 
-      case 'SELL_UNIT': {
+      case "SELL_UNIT": {
         // Disallow selling units on first turn (Round 1-1)
         if (this.state.stage === 1 && this.state.roundInStage === 1) {
           return;
@@ -744,10 +1053,10 @@ export class AutoBattlerRoom {
         const { source, x, y } = action;
         let unit: BoardUnit | null = null;
 
-        if (source === 'board' && y !== undefined) {
+        if (source === "board" && y !== undefined) {
           unit = player.board[y][x];
           player.board[y][x] = null;
-        } else if (source === 'bench') {
+        } else if (source === "bench") {
           unit = player.bench[x];
           player.bench[x] = null;
         }
@@ -765,6 +1074,8 @@ export class AutoBattlerRoom {
           const emptySlot = player.itemBench.indexOf(null);
           if (emptySlot !== -1) {
             player.itemBench[emptySlot] = itemKey;
+          } else {
+            player.itemBench.push(itemKey);
           }
         }
 
@@ -773,27 +1084,27 @@ export class AutoBattlerRoom {
         break;
       }
 
-      case 'MOVE_UNIT': {
+      case "MOVE_UNIT": {
         const { from, to } = action;
         let sourceUnit: BoardUnit | null = null;
 
-        if (from.area === 'board' && from.y !== undefined) {
+        if (from.area === "board" && from.y !== undefined) {
           sourceUnit = player.board[from.y][from.x];
-        } else if (from.area === 'bench') {
+        } else if (from.area === "bench") {
           sourceUnit = player.bench[from.x];
         }
 
         if (!sourceUnit) return;
 
         let targetUnit: BoardUnit | null = null;
-        if (to.area === 'board' && to.y !== undefined) {
+        if (to.area === "board" && to.y !== undefined) {
           targetUnit = player.board[to.y][to.x];
-        } else if (to.area === 'bench') {
+        } else if (to.area === "bench") {
           targetUnit = player.bench[to.x];
         }
 
         // Check board unit capacity limit if moving from bench to empty board tile
-        if (from.area === 'bench' && to.area === 'board' && !targetUnit) {
+        if (from.area === "bench" && to.area === "board" && !targetUnit) {
           const currentBoardCount = this.getBoardUnits(player).length;
           if (currentBoardCount >= player.level) {
             return;
@@ -801,7 +1112,7 @@ export class AutoBattlerRoom {
         }
 
         // Clear source
-        if (from.area === 'board' && from.y !== undefined) {
+        if (from.area === "board" && from.y !== undefined) {
           player.board[from.y][from.x] = targetUnit;
           if (targetUnit) targetUnit.position = { x: from.x, y: from.y };
         } else {
@@ -810,7 +1121,7 @@ export class AutoBattlerRoom {
         }
 
         // Set target
-        if (to.area === 'board' && to.y !== undefined) {
+        if (to.area === "board" && to.y !== undefined) {
           player.board[to.y][to.x] = sourceUnit;
           sourceUnit.position = { x: to.x, y: to.y };
         } else {
@@ -822,15 +1133,15 @@ export class AutoBattlerRoom {
         break;
       }
 
-      case 'BUY_XP': {
-        if (player.gold >= XP_COST && player.level < 9) {
+      case "BUY_XP": {
+        if (player.gold >= XP_COST && player.level < 10) {
           player.gold -= XP_COST;
           addPlayerXp(player, XP_GAIN);
         }
         break;
       }
 
-      case 'REROLL_SHOP': {
+      case "REROLL_SHOP": {
         if (player.gold >= REROLL_COST) {
           player.gold -= REROLL_COST;
           player.shopUnits = this.pool.drawShop(player.level, 5);
@@ -838,25 +1149,37 @@ export class AutoBattlerRoom {
         break;
       }
 
-      case 'LOCK_SHOP': {
+      case "LOCK_SHOP": {
         player.shopLocked = !player.shopLocked;
         break;
       }
 
-      case 'EQUIP_ITEM': {
+      case "EQUIP_ITEM": {
         const itemKey = player.itemBench[action.itemSlot];
         if (!itemKey) return;
 
         // 1. Direct item bench interaction (drag item onto another item slot to combine or move)
-        if (action.target.area === 'item_bench') {
+        if (action.target.area === "item_bench") {
           const targetSlot = action.target.x;
-          if (targetSlot === action.itemSlot || targetSlot < 0 || targetSlot >= 10) return;
+          if (
+            targetSlot === action.itemSlot ||
+            targetSlot < 0
+          )
+            return;
+
+          while (player.itemBench.length <= targetSlot) {
+            player.itemBench.push(null);
+          }
+
           const targetItemKey = player.itemBench[targetSlot];
 
           if (!targetItemKey) {
             player.itemBench[targetSlot] = itemKey;
             player.itemBench[action.itemSlot] = null;
-          } else if (BASE_ITEMS[targetItemKey as BaseItemId] && BASE_ITEMS[itemKey as BaseItemId]) {
+          } else if (
+            BASE_ITEMS[targetItemKey as BaseItemId] &&
+            BASE_ITEMS[itemKey as BaseItemId]
+          ) {
             const combined = combineItems(targetItemKey, itemKey);
             if (combined) {
               player.itemBench[targetSlot] = combined.id;
@@ -868,19 +1191,40 @@ export class AutoBattlerRoom {
 
         // 2. Equip or combine onto a unit (board or bench) - allowed during COMBAT or PLANNING
         let targetUnit: BoardUnit | null = null;
-        if (action.target.area === 'board' && action.target.y !== undefined) {
+        if (action.target.area === "board" && action.target.y !== undefined) {
           targetUnit = player.board[action.target.y][action.target.x];
-        } else if (action.target.area === 'bench') {
+          // If no unit on that exact coordinate (unit moved during combat or dropped nearby), find closest board unit
+          if (!targetUnit && this.state.phase === "COMBAT") {
+            let closestDist = Infinity;
+            for (let r = 0; r < 4; r++) {
+              for (let c = 0; c < 8; c++) {
+                const u = player.board[r][c];
+                if (u) {
+                  const dist = Math.hypot(c - action.target.x, r - action.target.y);
+                  if (dist < closestDist && dist <= 2.5) {
+                    closestDist = dist;
+                    targetUnit = u;
+                  }
+                }
+              }
+            }
+          }
+        } else if (action.target.area === "bench") {
           targetUnit = player.bench[action.target.x];
         }
 
         if (!targetUnit) return;
 
-        if (targetUnit.items.length === 1 && BASE_ITEMS[targetUnit.items[0] as BaseItemId] && BASE_ITEMS[itemKey as BaseItemId]) {
+        if (
+          targetUnit.items.length === 1 &&
+          BASE_ITEMS[targetUnit.items[0] as BaseItemId] &&
+          BASE_ITEMS[itemKey as BaseItemId]
+        ) {
           const combined = combineItems(targetUnit.items[0], itemKey);
           if (combined) {
             targetUnit.items = [combined.id];
             player.itemBench[action.itemSlot] = null;
+            player.activeTraits = calculateSynergies(player.board);
             break;
           }
         }
@@ -888,12 +1232,13 @@ export class AutoBattlerRoom {
         if (targetUnit.items.length < 3) {
           targetUnit.items.push(itemKey);
           player.itemBench[action.itemSlot] = null;
+          player.activeTraits = calculateSynergies(player.board);
         }
         break;
       }
 
-      case 'SURRENDER':
-      case 'FORFEIT': {
+      case "SURRENDER":
+      case "FORFEIT": {
         if (player.isEliminated) break;
         player.isEliminated = true;
         player.health = 0;
@@ -911,15 +1256,20 @@ export class AutoBattlerRoom {
         }
 
         // Clear player board and bench
-        player.board = Array(4).fill(null).map(() => Array(8).fill(null));
+        player.board = Array(4)
+          .fill(null)
+          .map(() => Array(8).fill(null));
         player.bench = Array(9).fill(null);
         player.activeTraits = [];
 
         // Check if only 1 active player remains
-        const activeRemaining = Object.values(this.state.players).filter((p) => !p.isEliminated);
+        const activeRemaining = Object.values(this.state.players).filter(
+          (p) => !p.isEliminated,
+        );
         if (activeRemaining.length <= 1) {
-          this.state.phase = 'GAME_OVER';
-          this.state.winnerId = activeRemaining.length === 1 ? activeRemaining[0].id : player.id;
+          this.state.phase = "GAME_OVER";
+          this.state.winnerId =
+            activeRemaining.length === 1 ? activeRemaining[0].id : player.id;
         }
         break;
       }
@@ -949,7 +1299,11 @@ export class AutoBattlerRoom {
       .map((p) => p.id);
   }
 
-  private createPlayerState(id: string, name: string, isBot: boolean): PlayerState {
+  private createPlayerState(
+    id: string,
+    name: string,
+    isBot: boolean,
+  ): PlayerState {
     return {
       id,
       name,
@@ -978,12 +1332,12 @@ export class AutoBattlerRoom {
   private sendStateTo(playerId: string): void {
     const ws = this.clients.get(playerId);
     if (ws && ws.readyState === WebSocket.OPEN) {
-      ws.send(JSON.stringify({ type: 'STATE_UPDATE', state: this.state }));
+      ws.send(JSON.stringify({ type: "STATE_UPDATE", state: this.state }));
     }
   }
 
   public broadcastState(): void {
-    const payload = JSON.stringify({ type: 'STATE_UPDATE', state: this.state });
+    const payload = JSON.stringify({ type: "STATE_UPDATE", state: this.state });
     for (const ws of this.clients.values()) {
       if (ws.readyState === WebSocket.OPEN) {
         ws.send(payload);

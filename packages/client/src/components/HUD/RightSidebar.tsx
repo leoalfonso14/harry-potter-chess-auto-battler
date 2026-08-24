@@ -105,7 +105,7 @@ export const RightSidebar: React.FC<{
                   key={pId}
                   onClick={() => onSelectPlayer?.(pId)}
                   title={isMe ? 'Your Board (Click or hit Spacebar to return)' : `Click to scout ${p.name}`}
-                  className={`p-2 rounded-xl border flex flex-col gap-1.5 transition cursor-pointer transform hover:-translate-x-0.5 ${
+                  className={`p-2 rounded-xl border flex flex-col gap-1.5 transition cursor-pointer transform hover:-translate-x-0.5 relative group ${
                     isViewing && !isMe
                       ? 'border-amber-400 bg-amber-950/40 ring-1 ring-amber-400/60 shadow-lg shadow-amber-950'
                       : isMe
@@ -115,6 +115,30 @@ export const RightSidebar: React.FC<{
                       : 'border-slate-800/90 bg-slate-900/60 hover:border-slate-700'
                   } ${p.isEliminated ? 'opacity-40 grayscale pointer-events-none' : ''}`}
                 >
+                  {/* Floating Opponent Quick Summary on Hover */}
+                  {!isMe && !p.isEliminated && (
+                    <div className="absolute right-full top-0 mr-2 w-56 bg-[#0a0e1a] border border-slate-700/80 rounded-xl p-3 shadow-2xl shadow-black z-[9999] opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none flex flex-col gap-2 text-left">
+                      <div className="flex items-center justify-between border-b border-slate-800 pb-1.5">
+                        <span className="text-xs font-bold text-slate-100">{p.name}</span>
+                        <span className="text-[10px] font-mono text-amber-400 font-bold">{p.gold}g • Lvl {p.level}</span>
+                      </div>
+                      <div className="flex flex-col gap-1 text-[10px]">
+                        <span className="text-slate-400 font-semibold uppercase text-[9px]">Active Synergies:</span>
+                        <div className="flex items-center gap-1 flex-wrap">
+                          {p.activeTraits.filter(t => t.activeTier > 0).length === 0 ? (
+                            <span className="text-slate-500 italic">None active</span>
+                          ) : (
+                            p.activeTraits.filter(t => t.activeTier > 0).slice(0, 4).map(t => (
+                              <span key={t.traitId} className="bg-slate-900 border border-slate-700 px-1.5 py-0.5 rounded text-amber-300 font-semibold">
+                                {t.name} ({t.count})
+                              </span>
+                            ))
+                          )}
+                        </div>
+                      </div>
+                    </div>
+                  )}
+
                   {/* Header: Name, Bot tag, Opponent indicator */}
                   <div className="flex items-center justify-between">
                     <div className="flex items-center gap-1.5 min-w-0">
@@ -150,7 +174,7 @@ export const RightSidebar: React.FC<{
                       )}
                     </div>
 
-                    {/* Streak & Gold Indicators */}
+                    {/* Streak Indicator */}
                     <div className="flex items-center gap-1.5 text-[10px]">
                       {Math.abs(p.streak) >= 2 && (
                         <span
@@ -168,7 +192,6 @@ export const RightSidebar: React.FC<{
                           {Math.abs(p.streak)}
                         </span>
                       )}
-                      <span className="font-mono text-amber-400 font-bold">{p.gold}g</span>
                     </div>
                   </div>
 
@@ -377,12 +400,17 @@ export const RightSidebar: React.FC<{
                                         </span>
                                       </div>
                                       <span className="text-[8px] uppercase font-bold text-amber-400/80 bg-amber-500/10 px-1 py-0.2 rounded border border-amber-500/20">
-                                        {itm.isArtifact ? 'Artifact' : 'Component'}
+                                        {itm.isArtifact ? 'Completed Item' : 'Component'}
                                       </span>
                                     </div>
                                     <p className="text-[10px] text-slate-300 leading-snug">
                                       {itm.description}
                                     </p>
+                                    {itm.signatureDescription && (
+                                      <p className="text-[9px] text-amber-300 font-medium bg-amber-950/40 p-1 rounded border border-amber-500/30">
+                                        ✨ {itm.signatureDescription}
+                                      </p>
+                                    )}
                                   </div>
                                 </div>
                               );

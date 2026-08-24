@@ -123,7 +123,13 @@ export const TopBar: React.FC = () => {
           </span>
 
           {/* Central Circular Countdown Dial */}
-          <div className="w-7 h-7 rounded-full border-2 border-amber-400 bg-slate-950 flex items-center justify-center font-mono font-black text-xs text-amber-300 shadow-inner ring-1 ring-slate-800">
+          <div
+            className={`w-7 h-7 rounded-full border-2 flex items-center justify-center font-mono font-black text-xs shadow-inner ring-1 transition-all ${
+              matchState.phase === 'PLANNING' && matchState.phaseTimeRemaining <= 5
+                ? 'border-red-500 bg-red-950 text-red-300 ring-red-500/50 animate-pulse scale-110'
+                : 'border-amber-400 bg-slate-950 text-amber-300 ring-slate-800'
+            }`}
+          >
             {matchState.phaseTimeRemaining}
           </div>
 

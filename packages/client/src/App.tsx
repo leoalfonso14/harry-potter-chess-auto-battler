@@ -29,6 +29,7 @@ export const App: React.FC = () => {
     x: number;
     y?: number;
   } | null>(null);
+  const [highlightedTraitUnitIds, setHighlightedTraitUnitIds] = useState<Set<string> | null>(null);
 
   // Sync viewing player with self if playerId updates or match starts
   useEffect(() => {
@@ -154,7 +155,10 @@ export const App: React.FC = () => {
       {/* Main Play Area */}
       <div className="flex-1 flex items-stretch overflow-hidden relative">
         {/* Left Side: Active Traits / Synergies */}
-        <TraitPanel viewingPlayerId={viewingPlayerId} />
+        <TraitPanel
+          viewingPlayerId={viewingPlayerId}
+          onHoverTraitUnitIds={setHighlightedTraitUnitIds}
+        />
 
         {/* Center: Arena WebGL Canvas & Overlays */}
         <div className="flex-1 flex flex-col items-center justify-center relative bg-slate-950">
@@ -162,6 +166,7 @@ export const App: React.FC = () => {
             viewingPlayerId={viewingPlayerId}
             selectedBenchIndex={selectedBenchIndex}
             selectedItemSlot={selectedItemSlot}
+            highlightedTraitUnitIds={highlightedTraitUnitIds}
             onClearSelection={handleClearSelection}
             onInspectUnit={handleToggleInspectUnit}
             onInspectUnitUpdate={setInspectedUnit}

@@ -1,9 +1,11 @@
 import React, { useState } from 'react';
 import { useGameSocket } from '../../context/GameSocketContext';
 import { UNITS, ALL_ITEMS, BASE_ITEMS, BaseItemId, combineItems } from '@autobattler/shared';
-import { Trash2, BookOpen, Sparkles, DollarSign, Eye, ArrowLeft } from 'lucide-react';
+import { Trash2, BookOpen, Sparkles, DollarSign, Eye, ArrowLeft, Layers, ChevronLeft, ChevronRight } from 'lucide-react';
 import { ItemRecipeModal } from './ItemRecipeModal';
+import { SynergyGuideModal } from './SynergyGuideModal';
 import { InspectedUnitData } from './UnitInspector';
+import { getUnitIcon, getUnitPortraitUrl, hasUnitImage } from '../../render/unit-assets.js';
 
 function formatStatBadge(key: string, value: number): string {
   switch (key) {
@@ -60,7 +62,9 @@ export const BenchAndItems: React.FC<{
   const { matchState, playerId, sendAction } = useGameSocket();
   const [hoveredItem, setHoveredItem] = useState<{ id: string; slot: number; synthesized?: any } | null>(null);
   const [draggedItemSlot, setDraggedItemSlot] = useState<number | null>(null);
+  const [itemBenchPage, setItemBenchPage] = useState(0);
   const [isRecipeModalOpen, setIsRecipeModalOpen] = useState(false);
+  const [isSynergyModalOpen, setIsSynergyModalOpen] = useState(false);
 
   if (!matchState) return null;
 
@@ -170,108 +174,159 @@ export const BenchAndItems: React.FC<{
   return (
     <>
       <div className="w-full bg-slate-950/95 backdrop-blur border-t border-slate-800 p-2.5 flex items-center justify-between gap-4 z-20 select-none relative">
-        {/* Left Side: Item Bench (10 Slots) & Recipe Book Button */}
-        <div className="flex items-center gap-3">
-          <div className="flex flex-col gap-1">
-            <div className="flex items-center justify-between">
-              <span className="text-xs font-bold uppercase tracking-wider text-slate-400 flex items-center gap-1">
-                <span>{isScouting ? `${player.name.split(' ')[0]}'s Items` : 'Item Bench'}</span>
-                <span className="text-amber-400 font-mono-stat">
-                  ({player.itemBench.filter(Boolean).length}/10)
-                </span>
-              </span>
-              <div className="flex items-center gap-2">
-                <button
-                  onClick={() => setIsRecipeModalOpen(true)}
-                  className="text-[11px] text-amber-400 hover:text-amber-300 flex items-center gap-1 bg-amber-500/10 hover:bg-amber-500/20 px-2 py-0.5 rounded border border-amber-500/20 transition"
-                >
-                  <BookOpen className="w-3 h-3" />
-                  Recipe Book
-                </button>
-              </div>
-            </div>
+        {/* Left Side: Item Bench (10 Slots per page) & Recipe Book Button */}
+        {(() => {
+          const ITEMS_PER_PAGE = 10;
+          const totalBenchSlots = Math.max(10, player.itemBench.length);
+          const totalPages = Math.max(1, Math.ceil(totalBenchSlots / ITEMS_PER_PAGE));
+          const safePage = Math.min(itemBenchPage, totalPages - 1);
+          const pageStartIndex = safePage * ITEMS_PER_PAGE;
+          const currentSlots = Array.from({ length: ITEMS_PER_PAGE }, (_, i) => {
+            const slotIdx = pageStartIndex + i;
+            return {
+              slotIdx,
+              itemId: player.itemBench[slotIdx] || null,
+            };
+          });
 
-            <div className="flex items-center gap-1.5 bg-slate-900/90 p-1.5 rounded-xl border border-slate-800 shadow-inner">
-              {player.itemBench.map((itemId, idx) => {
-                const itemDef = itemId ? ALL_ITEMS[itemId] : null;
-                const isSelected = selectedItemSlot === idx;
-                const isBeingDragged = draggedItemSlot === idx;
-
-                let previewCombinedItem: any = null;
-                const activeSourceSlot = draggedItemSlot !== null ? draggedItemSlot : selectedItemSlot;
-                if (
-                  activeSourceSlot !== null &&
-                  activeSourceSlot !== idx &&
-                  itemId &&
-                  player.itemBench[activeSourceSlot]
-                ) {
-                  const sourceKey = player.itemBench[activeSourceSlot];
-                  if (sourceKey && BASE_ITEMS[sourceKey as BaseItemId] && BASE_ITEMS[itemId as BaseItemId]) {
-                    previewCombinedItem = combineItems(sourceKey, itemId);
-                  }
-                }
-
-                return (
-                  <div
-                    key={idx}
-                    id={`item-bench-slot-${idx}`}
-                    draggable={!isScouting && Boolean(itemId)}
-                    onDragStart={(e) => {
-                      if (!itemId || isScouting) return;
-                      const payload = JSON.stringify({ type: 'item', slot: idx, itemId });
-                      e.dataTransfer.setData('application/json', payload);
-                      e.dataTransfer.setData('text/plain', payload);
-                      e.dataTransfer.effectAllowed = 'move';
-                      setDraggedItemSlot(idx);
-                    }}
-                    onDragEnd={() => setDraggedItemSlot(null)}
-                    onDragOver={(e) => !isScouting && e.preventDefault()}
-                    onDrop={(e) => handleItemSlotDrop(idx, e)}
-                    onMouseEnter={() => {
-                      if (itemId) {
-                        setHoveredItem({
-                          id: itemId,
-                          slot: idx,
-                          synthesized: previewCombinedItem || undefined,
-                        });
-                      }
-                    }}
-                    onMouseLeave={() => setHoveredItem(null)}
-                    title={previewCombinedItem ? `Synthesizes into: ${previewCombinedItem.name}` : itemDef?.name}
-                    className={`w-11 h-11 rounded-lg border flex items-center justify-center relative transition-all duration-150 select-none ${
-                      isScouting ? 'cursor-default' : 'cursor-grab active:cursor-grabbing'
-                    } ${
-                      isSelected
-                        ? 'border-amber-400 bg-amber-950/80 ring-2 ring-amber-400 shadow-lg shadow-amber-500/20 scale-105'
-                        : isBeingDragged
-                        ? 'opacity-40 border-dashed border-amber-400'
-                        : previewCombinedItem
-                        ? 'border-emerald-400 bg-emerald-950/60 ring-2 ring-emerald-400 animate-pulse'
-                        : itemId
-                        ? 'border-slate-700 bg-slate-800/90 hover:border-amber-400/80 hover:bg-slate-700 shadow'
-                        : 'border-dashed border-slate-800 bg-slate-950/40'
-                    }`}
-                  >
-                    {itemDef ? (
-                      <span className="text-xl select-none transform hover:scale-110 transition">
-                        {itemDef.icon}
+          return (
+            <div className="flex items-center gap-3">
+              <div className="flex flex-col gap-1">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    <span className="text-xs font-bold uppercase tracking-wider text-slate-400 flex items-center gap-1">
+                      <span>{isScouting ? `${player.name.split(' ')[0]}'s Items` : 'Item Bench'}</span>
+                      <span className="text-amber-400 font-mono-stat">
+                        ({player.itemBench.filter(Boolean).length} Items)
                       </span>
-                    ) : (
-                      <span className="text-[10px] text-slate-600 font-mono">{idx + 1}</span>
-                    )}
-
-                    {/* Synthesize Preview Tag */}
-                    {previewCombinedItem && (
-                      <span className="absolute -top-6 bg-emerald-900 border border-emerald-400 text-emerald-200 text-[9px] font-bold px-1.5 py-0.5 rounded shadow whitespace-nowrap z-30 pointer-events-none">
-                        ✦ {previewCombinedItem.name}
-                      </span>
+                    </span>
+                    {totalPages > 1 && (
+                      <div className="flex items-center gap-1 bg-slate-900 px-1.5 py-0.5 rounded-md border border-slate-800 text-[10px]">
+                        <button
+                          onClick={() => setItemBenchPage((p) => Math.max(0, p - 1))}
+                          disabled={safePage === 0}
+                          className="text-slate-400 hover:text-amber-300 disabled:opacity-30 disabled:pointer-events-none"
+                          title="Previous Item Page"
+                        >
+                          <ChevronLeft className="w-3.5 h-3.5" />
+                        </button>
+                        <span className="font-mono text-slate-300 px-1 font-bold">
+                          {safePage + 1}/{totalPages}
+                        </span>
+                        <button
+                          onClick={() => setItemBenchPage((p) => Math.min(totalPages - 1, p + 1))}
+                          disabled={safePage >= totalPages - 1}
+                          className="text-slate-400 hover:text-amber-300 disabled:opacity-30 disabled:pointer-events-none"
+                          title="Next Item Page"
+                        >
+                          <ChevronRight className="w-3.5 h-3.5" />
+                        </button>
+                      </div>
                     )}
                   </div>
-                );
-              })}
+                  <div className="flex items-center gap-1.5">
+                    <button
+                      onClick={() => setIsRecipeModalOpen(true)}
+                      className="text-[11px] text-amber-400 hover:text-amber-300 flex items-center gap-1 bg-amber-500/10 hover:bg-amber-500/20 px-2 py-0.5 rounded border border-amber-500/20 transition"
+                      title="View Item Recipes"
+                    >
+                      <BookOpen className="w-3 h-3" />
+                      <span>Items</span>
+                    </button>
+                    <button
+                      onClick={() => setIsSynergyModalOpen(true)}
+                      className="text-[11px] text-indigo-300 hover:text-indigo-200 flex items-center gap-1 bg-indigo-500/10 hover:bg-indigo-500/20 px-2 py-0.5 rounded border border-indigo-500/20 transition"
+                      title="View Synergies & Champions Compendium"
+                    >
+                      <Layers className="w-3 h-3" />
+                      <span>Codex</span>
+                    </button>
+                  </div>
+                </div>
+
+                <div className="flex items-center gap-1.5 bg-slate-900/90 p-1.5 rounded-xl border border-slate-800 shadow-inner">
+                  {currentSlots.map(({ slotIdx, itemId }) => {
+                    const itemDef = itemId ? ALL_ITEMS[itemId] : null;
+                    const isSelected = selectedItemSlot === slotIdx;
+                    const isBeingDragged = draggedItemSlot === slotIdx;
+
+                    let previewCombinedItem: any = null;
+                    const activeSourceSlot = draggedItemSlot !== null ? draggedItemSlot : selectedItemSlot;
+                    if (
+                      activeSourceSlot !== null &&
+                      activeSourceSlot !== slotIdx &&
+                      itemId &&
+                      player.itemBench[activeSourceSlot]
+                    ) {
+                      const sourceKey = player.itemBench[activeSourceSlot];
+                      if (sourceKey && BASE_ITEMS[sourceKey as BaseItemId] && BASE_ITEMS[itemId as BaseItemId]) {
+                        previewCombinedItem = combineItems(sourceKey, itemId);
+                      }
+                    }
+
+                    return (
+                      <div
+                        key={slotIdx}
+                        id={`item-bench-slot-${slotIdx}`}
+                        draggable={!isScouting && Boolean(itemId)}
+                        onDragStart={(e) => {
+                          if (!itemId || isScouting) return;
+                          const payload = JSON.stringify({ type: 'item', slot: slotIdx, itemId });
+                          e.dataTransfer.setData('application/json', payload);
+                          e.dataTransfer.setData('text/plain', payload);
+                          e.dataTransfer.effectAllowed = 'move';
+                          setDraggedItemSlot(slotIdx);
+                        }}
+                        onDragEnd={() => setDraggedItemSlot(null)}
+                        onDragOver={(e) => !isScouting && e.preventDefault()}
+                        onDrop={(e) => handleItemSlotDrop(slotIdx, e)}
+                        onMouseEnter={() => {
+                          if (itemId) {
+                            setHoveredItem({
+                              id: itemId,
+                              slot: slotIdx,
+                              synthesized: previewCombinedItem || undefined,
+                            });
+                          }
+                        }}
+                        onMouseLeave={() => setHoveredItem(null)}
+                        title={previewCombinedItem ? `Synthesizes into: ${previewCombinedItem.name}` : itemDef?.name}
+                        className={`w-11 h-11 rounded-lg border flex items-center justify-center relative transition-all duration-150 select-none ${
+                          isScouting ? 'cursor-default' : 'cursor-grab active:cursor-grabbing'
+                        } ${
+                          isSelected
+                            ? 'border-amber-400 bg-amber-950/80 ring-2 ring-amber-400 shadow-lg shadow-amber-500/20 scale-105'
+                            : isBeingDragged
+                            ? 'opacity-40 border-dashed border-amber-400'
+                            : previewCombinedItem
+                            ? 'border-emerald-400 bg-emerald-950/60 ring-2 ring-emerald-400 animate-pulse'
+                            : itemId
+                            ? 'border-slate-700 bg-slate-800/90 hover:border-amber-400/80 hover:bg-slate-700 shadow'
+                            : 'border-dashed border-slate-800 bg-slate-950/40'
+                        }`}
+                      >
+                        {itemDef ? (
+                          <span className="text-xl select-none transform hover:scale-110 transition">
+                            {itemDef.icon}
+                          </span>
+                        ) : (
+                          <span className="text-[10px] text-slate-600 font-mono">{slotIdx + 1}</span>
+                        )}
+
+                        {/* Synthesize Preview Tag */}
+                        {previewCombinedItem && (
+                          <span className="absolute -top-6 bg-emerald-900 border border-emerald-400 text-emerald-200 text-[9px] font-bold px-1.5 py-0.5 rounded shadow whitespace-nowrap z-30 pointer-events-none">
+                            ✦ {previewCombinedItem.name}
+                          </span>
+                        )}
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
             </div>
-          </div>
-        </div>
+          );
+        })()}
 
         {/* Center/Right: Champion Reserve Bench (9 Slots) */}
         <div className="flex-1 flex justify-center">
@@ -344,11 +399,21 @@ export const BenchAndItems: React.FC<{
                           </span>
                         </div>
 
-                        {/* Middle: Champion Avatar / Name */}
+                        {/* Middle: Compact Champion Portrait Avatar / Name */}
                         <div className="flex flex-col items-center">
-                          <span className="text-base font-bold drop-shadow">
-                            {def.name.charAt(0)}
-                          </span>
+                          <div className="w-8 h-8 rounded-full overflow-hidden border border-white/30 relative shadow-md bg-slate-900 flex items-center justify-center mb-0.5">
+                            {hasUnitImage(unit.unitId) ? (
+                              <img
+                                src={getUnitPortraitUrl(unit.unitId)}
+                                alt={def.name}
+                                className="w-full h-full object-cover object-[75%_center]"
+                              />
+                            ) : (
+                              <span className="text-sm leading-none pointer-events-none">
+                                {getUnitIcon(unit.unitId)}
+                              </span>
+                            )}
+                          </div>
                           <span className="text-[10px] font-semibold truncate max-w-[56px] text-slate-200">
                             {def.name.split(' ')[0]}
                           </span>
@@ -391,7 +456,7 @@ export const BenchAndItems: React.FC<{
                       Synthesizes Into
                     </span>
                   </span>
-                  <span className="text-[10px] text-amber-400 font-medium">Completed Artifact</span>
+                  <span className="text-[10px] text-amber-400 font-medium">Completed Item</span>
                 </div>
               </div>
               {hoveredItem.synthesized.stats && (
@@ -404,6 +469,11 @@ export const BenchAndItems: React.FC<{
                 </div>
               )}
               <p className="text-[11px] text-slate-200 leading-snug">{hoveredItem.synthesized.description}</p>
+              {hoveredItem.synthesized.signatureDescription && (
+                <p className="text-[10px] text-amber-300 font-medium bg-amber-950/40 p-1.5 rounded border border-amber-500/30">
+                  ✨ {hoveredItem.synthesized.signatureDescription}
+                </p>
+              )}
             </>
           ) : ALL_ITEMS[hoveredItem.id] ? (
             <>
@@ -412,7 +482,7 @@ export const BenchAndItems: React.FC<{
                 <div className="flex flex-col">
                   <span className="text-xs font-bold text-slate-100">{ALL_ITEMS[hoveredItem.id].name}</span>
                   <span className="text-[10px] text-amber-400 capitalize font-medium">
-                    {ALL_ITEMS[hoveredItem.id].isArtifact ? 'Completed Artifact' : 'Basic Component'}
+                    {ALL_ITEMS[hoveredItem.id].isArtifact ? 'Completed Item' : 'Basic Component'}
                   </span>
                 </div>
               </div>
@@ -426,6 +496,11 @@ export const BenchAndItems: React.FC<{
                 </div>
               )}
               <p className="text-[11px] text-slate-300 leading-snug">{ALL_ITEMS[hoveredItem.id].description}</p>
+              {ALL_ITEMS[hoveredItem.id].signatureDescription && (
+                <p className="text-[10px] text-amber-300 font-medium bg-amber-950/40 p-1.5 rounded border border-amber-500/30">
+                  ✨ {ALL_ITEMS[hoveredItem.id].signatureDescription}
+                </p>
+              )}
             </>
           ) : null}
         </div>
@@ -433,6 +508,7 @@ export const BenchAndItems: React.FC<{
 
       {/* Recipe Book Modal */}
       <ItemRecipeModal isOpen={isRecipeModalOpen} onClose={() => setIsRecipeModalOpen(false)} />
+      <SynergyGuideModal isOpen={isSynergyModalOpen} onClose={() => setIsSynergyModalOpen(false)} />
     </>
   );
 };

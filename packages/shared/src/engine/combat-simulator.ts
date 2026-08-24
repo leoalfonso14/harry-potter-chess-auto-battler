@@ -78,21 +78,26 @@ export class CombatSimulator {
       // Casters possess baseline passive mana regeneration (+3 mana/sec)
       let manaPerSec = def.combatRole === 'Caster' ? 3 : 0;
 
-      // Apply Items
+      // Apply Items (with Lore Signature item affinity: 10% buff if 1 unit, 5% buff if >1 unit)
       for (const itemId of bu.items) {
         const itm = ALL_ITEMS[itemId];
         if (!itm) continue;
-        if (itm.stats.hp) hp += itm.stats.hp;
-        if (itm.stats.armor) armor += itm.stats.armor;
-        if (itm.stats.magicResist) magicResist += itm.stats.magicResist;
-        if (itm.stats.attackDamage) attackDamage += itm.stats.attackDamage;
-        if (itm.stats.attackSpeed) attackSpeed *= 1 + itm.stats.attackSpeed;
-        if (itm.stats.abilityPower) abilityPower += itm.stats.abilityPower;
-        if (itm.stats.startingMana) startingMana += itm.stats.startingMana;
-        if (itm.stats.manaPerSecond) manaPerSec += itm.stats.manaPerSecond;
+        const isSignature = Boolean(itm.signatureUnits && itm.signatureUnits.includes(def.id));
+        const buffPct = itm.signatureUnits && itm.signatureUnits.length === 1 ? 0.10 : 0.05;
+        const mult = isSignature ? (1 + buffPct) : 1.0;
+
+        if (itm.stats.hp) hp += Math.round(itm.stats.hp * mult);
+        if (itm.stats.armor) armor += Math.round(itm.stats.armor * mult);
+        if (itm.stats.magicResist) magicResist += Math.round(itm.stats.magicResist * mult);
+        if (itm.stats.attackDamage) attackDamage += Math.round(itm.stats.attackDamage * mult);
+        if (itm.stats.attackSpeed) attackSpeed *= 1 + (itm.stats.attackSpeed * mult);
+        if (itm.stats.abilityPower) abilityPower += itm.stats.abilityPower * mult;
+        if (itm.stats.startingMana) startingMana += Math.round(itm.stats.startingMana * mult);
+        if (itm.stats.manaPerSecond) manaPerSec += Math.round(itm.stats.manaPerSecond * mult);
         if (itm.stats.range) range += itm.stats.range;
-        if (itm.stats.critChance) critChance += itm.stats.critChance;
-        if (itm.stats.critDamage) critMultiplier += itm.stats.critDamage;
+        if (itm.stats.critChance) critChance += itm.stats.critChance * mult;
+        if (itm.stats.critDamage) critMultiplier += itm.stats.critDamage * mult;
+        if (itm.stats.dodgeChance) dodgeChance += (itm.stats.dodgeChance ?? 0) * mult;
       }
 
       // Apply Trait synergies
@@ -109,20 +114,21 @@ export class CombatSimulator {
         if (bp.bonus.abilityPower) abilityPower += bp.bonus.abilityPower;
 
         // Class/Origin specific bonuses
-        const isMember =
-          def.origins.includes(t.name as any) || def.classes.includes(t.name as any);
-
-        if (isMember) {
-          if (bp.bonus.health) hp += bp.bonus.health;
+        if (def.origins.includes(t.traitId as any) || def.classes.includes(t.traitId as any)) {
           if (bp.bonus.attackDamage) attackDamage += bp.bonus.attackDamage;
           if (bp.bonus.attackSpeed) attackSpeed *= 1 + bp.bonus.attackSpeed;
           if (bp.bonus.critChance) critChance += bp.bonus.critChance;
           if (bp.bonus.critDamage) critMultiplier += bp.bonus.critDamage;
-          if (bp.bonus.startingMana) startingMana += bp.bonus.startingMana;
-          if (bp.bonus.manaStartBonus) startingMana += bp.bonus.manaStartBonus;
-          if (bp.bonus.manaPerSecond) manaPerSec += bp.bonus.manaPerSecond;
           if (bp.bonus.dodgeChance) dodgeChance += bp.bonus.dodgeChance;
+          if (bp.bonus.health) hp += bp.bonus.health;
+          if (bp.bonus.startingMana) startingMana += bp.bonus.startingMana;
+          if (bp.bonus.bonusRange) range += bp.bonus.bonusRange;
         }
+      }
+
+      // Snipers innate: +1 range
+      if (def.classes.includes('Sniper')) {
+        range += 1;
       }
 
       // Grid position: Home team starts on player side (rows 4-7: y = 7 - bu.position.y), Away team on enemy side (rows 0-3: y = bu.position.y, mirrored x: 7 - bu.position.x)
@@ -170,26 +176,31 @@ export class CombatSimulator {
         totalShielding: 0,
         shield: 0,
         manaPerSec,
+        isJumping: Boolean(def.classes.includes('Infiltrator') || def.combatRole === 'Assassin'),
         statusEffects: [],
       };
+
+      // Patil Sisters: Twin bonds - grants 140 starting HP shield to both sisters
+      const hasPatilTrait = traits.some((t) => t.traitId === 'Patil Sisters' && t.activeTier >= 1);
+      if (hasPatilTrait && (def.id === 'padma_patil' || def.id === 'parvati_patil')) {
+        combatUnit.shield = 140;
+        combatUnit.totalShielding += 140;
+      }
+
+      // Golden Trio: Grants +150 HP Shield at combat start
+      const hasGoldenTrioTrait = traits.some((t) => t.traitId === 'Golden Trio' && t.activeTier >= 1);
+      if (hasGoldenTrioTrait && (def.id === 'harry_potter' || def.id === 'hermione_granger' || def.id === 'ron_weasley')) {
+        combatUnit.shield += 150;
+        combatUnit.totalShielding += 150;
+      }
 
       this.units.push(combatUnit);
     }
   }
 
   public simulate(): CombatResult {
-    // Tick 0: Spawn events & Infiltrator / Assassin leap
+    // Tick 0: Spawn events for all units at starting board positions
     for (const u of this.units) {
-      const def = UNITS[u.unitDefId];
-      if (def?.classes.includes('Infiltrator') || def?.combatRole === 'Assassin') {
-        // Infiltrators jump to backline at tick 0
-        const targetRow = u.team === 'home' ? 0 : 7;
-        const freeTile = this.findNearestFreeTile({ x: u.position.x, y: targetRow });
-        if (freeTile) {
-          u.position = freeTile;
-        }
-      }
-
       this.events.push({
         tick: 0,
         type: 'SPAWN',
@@ -204,16 +215,15 @@ export class CombatSimulator {
       });
     }
 
-    // Malfoy (2+) Bribe: Inflicts all enemy units with smSunder & smShred for duration at combat start
+    // Malfoy (2+) Bribe: Inflicts all enemy units with full sunder (-30%) & shred (-30%) for duration at combat start (Trait Sunder/Shred)
     const applyMalfoyBribe = (teamTraits: ActiveTraitInfo[], opposingTeam: 'home' | 'away') => {
       const malfoyTrait = teamTraits.find((t) => t.traitId === 'Malfoy' && t.activeTier >= 1);
       if (malfoyTrait) {
         const bp = TRAITS['Malfoy']?.breakpoints[malfoyTrait.activeTier - 1];
-        const sunderVal = bp?.bonus.sunderShredPercent ?? 0.12;
         const duration = bp?.bonus.sunderShredDuration ?? 6.0;
         for (const u of this.units.filter((u) => u.team === opposingTeam)) {
-          this.applyStatusEffect(u, 'smSunder', duration, sunderVal);
-          this.applyStatusEffect(u, 'smShred', duration, sunderVal);
+          this.applyStatusEffect(u, 'sunder', duration, 0.30);
+          this.applyStatusEffect(u, 'shred', duration, 0.30);
         }
       }
     };
@@ -284,13 +294,35 @@ export class CombatSimulator {
   }
 
   private stepTick(): void {
+    // Infiltrators & Assassins jump 0.1s (tick 2) after combat start to enemy backline
+    if (this.currentTick === 2) {
+      for (const u of this.units) {
+        if (u.isJumping && u.state !== 'DEAD') {
+          const targetRow = u.team === 'home' ? 0 : 7;
+          const freeTile = this.findNearestFreeTile({ x: u.position.x, y: targetRow });
+          if (freeTile) {
+            const fromPos = { ...u.position };
+            u.position = freeTile;
+            this.events.push({
+              tick: this.currentTick,
+              type: 'MOVE',
+              sourceId: u.id,
+              fromPos,
+              toPos: { ...freeTile },
+            });
+          }
+          u.isJumping = false;
+        }
+      }
+    }
+
     // Sort units deterministically by ID
     const activeUnits = this.units
       .filter((u) => u.state !== 'DEAD')
       .sort((a, b) => a.id.localeCompare(b.id));
 
     for (const unit of activeUnits) {
-      if (unit.state === 'DEAD') continue;
+      if (unit.state === 'DEAD' || unit.isJumping) continue;
 
       // Decrement status effects and update effective armor/magic resist if any expired
       if (unit.statusEffects && unit.statusEffects.length > 0) {
@@ -382,6 +414,7 @@ export class CombatSimulator {
           (u) =>
             u.team !== unit.team &&
             u.state !== 'DEAD' &&
+            !u.isJumping &&
             getHexDistance(unit.position, u.position) <= unit.range
         );
         if (inRangeEnemy) {
@@ -554,7 +587,7 @@ export class CombatSimulator {
 
     // Inquisitorial Squad: Bonus True Damage to crowd-controlled / detained enemies
     const inqTrait = attackerTeamTraits.find((t) => t.traitId === 'Inquisitorial Squad' && t.activeTier >= 1);
-    if (inqTrait && attackerDef?.origins.includes('Inquisitorial Squad')) {
+    if (inqTrait && attackerDef?.classes.includes('Inquisitorial Squad')) {
       const bp = TRAITS['Inquisitorial Squad']?.breakpoints[inqTrait.activeTier - 1];
       if (bp?.bonus.bonusTrueDamage) {
         const isCCed = target.statusEffects.some((e) => e.type === 'stunned' || e.type === 'disarmed' || e.type === 'silenced');
@@ -584,7 +617,11 @@ export class CombatSimulator {
     if (!def) return;
 
     const starIdx = caster.starLevel - 1;
-    const baseVal = def.ability.damageValues[starIdx];
+    const baseVal =
+      def.ability.damageValues?.[starIdx] ??
+      def.ability.healValues?.[starIdx] ??
+      def.ability.shieldValues?.[starIdx] ??
+      100;
     const scaledVal = Math.round(baseVal * caster.abilityPower);
 
     // Goblet of Fire mana refund
@@ -733,11 +770,30 @@ export class CombatSimulator {
       // Hufflepuff Valour: grants 250 shield to self and closest ally
       caster.shield += 250;
       caster.totalShielding += 250;
+      this.events.push({
+        tick: this.currentTick,
+        type: 'SHIELD',
+        sourceId: caster.id,
+        targetId: caster.id,
+        value: 250,
+        remainingHp: caster.currentHp,
+        remainingShield: caster.shield,
+      });
       const allies = this.units.filter((u) => u.team === caster.team && u.state !== 'DEAD' && u.id !== caster.id);
       if (allies.length > 0) {
         allies.sort((a, b) => getHexDistance(a.position, caster.position) - getHexDistance(b.position, caster.position));
         allies[0].shield += 250;
         allies[0].totalShielding += 250;
+        caster.totalShielding += 250;
+        this.events.push({
+          tick: this.currentTick,
+          type: 'SHIELD',
+          sourceId: caster.id,
+          targetId: allies[0].id,
+          value: 250,
+          remainingHp: allies[0].currentHp,
+          remainingShield: allies[0].shield,
+        });
       }
     } else if (caster.unitDefId === 'molly_weasley') {
       // Maternal Reductor Blast: grants 450 HP shield to lowest HP ally
@@ -755,10 +811,11 @@ export class CombatSimulator {
           targetId: lowestAlly.id,
           value: 450,
           remainingHp: lowestAlly.currentHp,
+          remainingShield: lowestAlly.shield,
         });
       }
     } else if (caster.unitDefId === 'narcissa_malfoy') {
-      // Unbreakable Maternal Aegis: grants 400 shield to closest ally & charms farthest enemy for 2.0s
+      // Unbreakable Maternal Aegis: grants 400 shield to closest ally & charms farthest enemy for 1.8s
       const closestAlly = this.units
         .filter((u) => u.team === caster.team && u.state !== 'DEAD' && u.id !== caster.id)
         .sort((a, b) => getHexDistance(a.position, caster.position) - getHexDistance(b.position, caster.position))[0];
@@ -766,12 +823,21 @@ export class CombatSimulator {
         closestAlly.shield += 400;
         closestAlly.totalShielding += 400;
         caster.totalShielding += 400;
+        this.events.push({
+          tick: this.currentTick,
+          type: 'SHIELD',
+          sourceId: caster.id,
+          targetId: closestAlly.id,
+          value: 400,
+          remainingHp: closestAlly.currentHp,
+          remainingShield: closestAlly.shield,
+        });
       }
       const farthestEnemy = this.units
         .filter((u) => u.team !== caster.team && u.state !== 'DEAD')
         .sort((a, b) => getHexDistance(b.position, caster.position) - getHexDistance(a.position, caster.position))[0];
       if (farthestEnemy) {
-        farthestEnemy.attackCooldown = Math.max(farthestEnemy.attackCooldown, 32); // 1.6s charm
+        this.applyStatusEffect(farthestEnemy, 'stunned', 1.8);
       }
     } else if (caster.unitDefId === 'argus_filch') {
       // Mrs. Norris Prowl & Shackle: stuns target for 1.0s (1-cost)
@@ -791,6 +857,36 @@ export class CombatSimulator {
       for (const e of enemies) {
         this.applyStatusEffect(e, 'silenced', 2.2);
         this.applyStatusEffect(e, 'disarmed', 2.2);
+      }
+    } else if (caster.unitDefId === 'fawkes') {
+      // Fawkes: Phoenix Rebirth Song (revives longest-dead ally once every 2 casts)
+      caster.fawkesCastCount = (caster.fawkesCastCount || 0) + 1;
+      if (caster.fawkesCastCount % 2 === 0) {
+        const deadAllies = this.units.filter((u) => u.team === caster.team && u.state === 'DEAD');
+        if (deadAllies.length > 0) {
+          deadAllies.sort((a, b) => (a.deathTick ?? 0) - (b.deathTick ?? 0));
+          const reviveTarget = deadAllies[0];
+          reviveTarget.state = 'IDLE';
+          reviveTarget.currentHp = Math.round(reviveTarget.maxHp * 0.50);
+          reviveTarget.currentMana = Math.round(reviveTarget.maxMana * 0.50);
+          reviveTarget.shield = 0;
+
+          this.events.push({
+            tick: this.currentTick,
+            type: 'REVIVE',
+            sourceId: caster.id,
+            targetId: reviveTarget.id,
+            value: reviveTarget.currentHp,
+            abilityName: 'Phoenix Tears Rebirth',
+            remainingHp: reviveTarget.currentHp,
+          });
+        }
+      }
+    } else if (caster.unitDefId === 'albus_dumbledore' || def.classes.includes('Grand Sorcerer')) {
+      // Grand Sorcerer: spell casts stun all living enemies for 1.5s
+      const enemies = this.units.filter((u) => u.team !== caster.team && u.state !== 'DEAD');
+      for (const e of enemies) {
+        this.applyStatusEffect(e, 'stunned', 1.5);
       }
     }
 
@@ -820,6 +916,7 @@ export class CombatSimulator {
           targetId: ally.id,
           value: 150,
           remainingHp: ally.currentHp,
+          remainingShield: ally.shield,
         });
       }
     }
@@ -848,6 +945,7 @@ export class CombatSimulator {
             targetId: w.id,
             value: heal,
             remainingHp: w.currentHp,
+            remainingShield: w.shield,
           });
         }
       }
@@ -876,6 +974,7 @@ export class CombatSimulator {
           targetId: p.id,
           value: 140,
           remainingHp: p.currentHp,
+          remainingShield: p.shield,
         });
       }
     }
@@ -972,7 +1071,7 @@ export class CombatSimulator {
     // Inquisitorial Squad (5): +18% bonus True Damage to crowd-controlled / detained enemies
     const casterTeamTraits = caster.team === 'home' ? this.homeTraits : this.awayTraits;
     const hasInquisitorial5 = casterTeamTraits.some((t) => t.traitId === 'Inquisitorial Squad' && t.activeTier >= 2);
-    if (hasInquisitorial5 && casterDef?.origins.includes('Inquisitorial Squad')) {
+    if (hasInquisitorial5 && casterDef?.classes.includes('Inquisitorial Squad')) {
       const isCCed = target.statusEffects.some((e) => e.type === 'stunned' || e.type === 'disarmed' || e.type === 'silenced');
       if (isCCed) {
         const bonusTrue = Math.max(1, Math.round(finalDmg * 0.18));
@@ -1074,6 +1173,7 @@ export class CombatSimulator {
           targetId: target.id,
           value: shieldAmount,
           remainingHp: target.currentHp,
+          remainingShield: target.shield,
         });
       }
     }
@@ -1101,10 +1201,11 @@ export class CombatSimulator {
       type: 'DAMAGE',
       sourceId: attacker.id,
       targetId: target.id,
-      value: damage,
+      value: effectiveDmg,
       damageType,
       isCrit,
       remainingHp: target.currentHp,
+      remainingShield: target.shield,
       remainingMana: target.currentMana,
     });
 
@@ -1134,6 +1235,7 @@ export class CombatSimulator {
   private killUnit(unit: CombatUnit): void {
     unit.state = 'DEAD';
     unit.currentHp = 0;
+    unit.deathTick = this.currentTick;
 
     this.events.push({
       tick: this.currentTick,
@@ -1150,7 +1252,7 @@ export class CombatSimulator {
   }
 
   private findBestTarget(unit: CombatUnit): CombatUnit | null {
-    const enemies = this.units.filter((u) => u.team !== unit.team && u.state !== 'DEAD');
+    const enemies = this.units.filter((u) => u.team !== unit.team && u.state !== 'DEAD' && !u.isJumping);
     if (enemies.length === 0) return null;
 
     // Primary: Closest Hex Distance

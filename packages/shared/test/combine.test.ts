@@ -84,7 +84,7 @@ describe('3-Star Combination Engine', () => {
     assert.strictEqual(player.bench[0], null);
     assert.strictEqual(player.bench[1], null);
 
-    // Items from u1 and u2 should be combined on the upgraded unit
-    assert.deepStrictEqual(result.upgradedUnit.items, ['wand_core', 'dragon_scale']);
+    // Items from u1 and u2 (wand_core + dragon_scale) should automatically synthesize into Protego Brooch artifact
+    assert.deepStrictEqual(result.upgradedUnit.items, ['protego_brooch']);
   });
 });

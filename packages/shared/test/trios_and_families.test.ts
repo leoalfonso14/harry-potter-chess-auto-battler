@@ -170,7 +170,7 @@ describe('Origins & Families: Golden Trio, Inquisitorial Squad, Weasley, Malfoy,
     const inqTraitInfo = {
       traitId: 'Inquisitorial Squad',
       name: 'Inquisitorial Squad',
-      type: 'origin' as const,
+      type: 'class' as const,
       count: 3,
       activeTier: 1,
       totalTiers: 2,
@@ -220,5 +220,66 @@ describe('Origins & Families: Golden Trio, Inquisitorial Squad, Weasley, Malfoy,
     assert.ok(gryff);
     assert.strictEqual(gryff.count, 8);
     assert.strictEqual(gryff.activeTier, 3);
+  });
+
+  it('should activate Headmaster with 1 unit and disable when both Dumbledore and Umbridge are on board', () => {
+    const board: (BoardUnit | null)[][] = Array(4)
+      .fill(null)
+      .map(() => Array(8).fill(null));
+
+    // 1 Headmaster (Dumbledore): Active
+    board[0][0] = { id: 'u1', unitId: 'albus_dumbledore', starLevel: 1, position: { x: 0, y: 0 }, items: [], currentHp: 950, maxHp: 950, currentMana: 35, maxMana: 100 };
+    let traits = calculateSynergies(board);
+    let hm = traits.find((t) => t.traitId === 'Headmaster');
+    assert.ok(hm);
+    assert.strictEqual(hm.count, 1);
+    assert.strictEqual(hm.activeTier, 1);
+
+    // Add Umbridge (2 Headmasters): Disables trait!
+    board[0][1] = { id: 'u2', unitId: 'dolores_umbridge', starLevel: 1, position: { x: 1, y: 0 }, items: [], currentHp: 750, maxHp: 750, currentMana: 0, maxMana: 70 };
+    traits = calculateSynergies(board);
+    hm = traits.find((t) => t.traitId === 'Headmaster');
+    assert.ok(hm);
+    assert.strictEqual(hm.count, 2);
+    assert.strictEqual(hm.activeTier, 0);
+  });
+
+  it('should activate Founder synergy when all 4 Hogwarts Founders are fielded', () => {
+    const board: (BoardUnit | null)[][] = Array(4)
+      .fill(null)
+      .map(() => Array(8).fill(null));
+
+    board[0][0] = { id: 'u1', unitId: 'godric_gryffindor', starLevel: 1, position: { x: 0, y: 0 }, items: [], currentHp: 950, maxHp: 950, currentMana: 0, maxMana: 80 };
+    board[0][1] = { id: 'u2', unitId: 'salazar_slytherin', starLevel: 1, position: { x: 1, y: 0 }, items: [], currentHp: 900, maxHp: 900, currentMana: 0, maxMana: 90 };
+    board[0][2] = { id: 'u3', unitId: 'rowena_ravenclaw', starLevel: 1, position: { x: 2, y: 0 }, items: [], currentHp: 900, maxHp: 900, currentMana: 0, maxMana: 80 };
+
+    let traits = calculateSynergies(board);
+    let founder = traits.find((t) => t.traitId === 'Founder');
+    assert.ok(founder);
+    assert.strictEqual(founder.count, 3);
+    assert.strictEqual(founder.activeTier, 0);
+
+    // 4th Founder (Helga Hufflepuff) completes the 4-piece synergy
+    board[0][3] = { id: 'u4', unitId: 'helga_hufflepuff', starLevel: 1, position: { x: 3, y: 0 }, items: [], currentHp: 950, maxHp: 950, currentMana: 0, maxMana: 80 };
+    traits = calculateSynergies(board);
+    founder = traits.find((t) => t.traitId === 'Founder');
+    assert.ok(founder);
+    assert.strictEqual(founder.count, 4);
+    assert.strictEqual(founder.activeTier, 1);
+  });
+
+  it('should execute Fawkes revive on every 2nd cast reviving longest-dead ally', () => {
+    const homeUnits: BoardUnit[] = [
+      { id: 'h1', unitId: 'fawkes', starLevel: 1, position: { x: 0, y: 3 }, items: [], currentHp: 900, maxHp: 900, currentMana: 100, maxMana: 100 },
+      { id: 'h2', unitId: 'colin_creevey', starLevel: 1, position: { x: 1, y: 3 }, items: [], currentHp: 50, maxHp: 500, currentMana: 0, maxMana: 60 },
+    ];
+    const awayUnits: BoardUnit[] = [
+      { id: 'a1', unitId: 'draco_malfoy', starLevel: 3, position: { x: 0, y: 0 }, items: [], currentHp: 3000, maxHp: 3000, currentMana: 0, maxMana: 100 },
+    ];
+
+    const sim = new CombatSimulator('home', 'away', homeUnits, awayUnits, [], [], 1);
+    const result = sim.simulate();
+
+    assert.ok(result.events.some((e) => e.type === 'SPELL_CAST' && e.sourceId?.startsWith('home')));
   });
 });

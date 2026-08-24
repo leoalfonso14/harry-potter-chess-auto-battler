@@ -41,14 +41,27 @@ export function calculateSynergies(board: (BoardUnit | null)[][]): ActiveTraitIn
     let currentDesc = '';
     let nextCount: number | null = null;
 
-    for (let i = 0; i < traitDef.breakpoints.length; i++) {
-      const bp = traitDef.breakpoints[i];
-      if (count >= bp.count) {
-        activeTier = i + 1;
-        currentDesc = bp.description;
+    if (traitName === 'Headmaster') {
+      if (count === 1) {
+        activeTier = 1;
+        currentDesc = traitDef.breakpoints[0]?.description || '';
+        nextCount = null;
       } else {
-        if (nextCount === null) {
-          nextCount = bp.count;
+        // Disabled when both Headmasters are fielded
+        activeTier = 0;
+        currentDesc = 'Trait Disabled: Multiple Headmasters on field.';
+        nextCount = null;
+      }
+    } else {
+      for (let i = 0; i < traitDef.breakpoints.length; i++) {
+        const bp = traitDef.breakpoints[i];
+        if (count >= bp.count) {
+          activeTier = i + 1;
+          currentDesc = bp.description;
+        } else {
+          if (nextCount === null) {
+            nextCount = bp.count;
+          }
         }
       }
     }

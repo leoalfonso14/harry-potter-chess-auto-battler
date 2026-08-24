@@ -1,8 +1,57 @@
 import React, { useState } from 'react';
 import { useGameSocket } from '../../context/GameSocketContext';
-import { UNITS, SHOP_ODDS, XP_COST, REROLL_COST, calculateStreakBonus } from '@autobattler/shared';
+import { UNITS, TRAITS, SHOP_ODDS, XP_COST, REROLL_COST, calculateStreakBonus } from '@autobattler/shared';
 import { RefreshCw, Zap, Lock, Unlock, Coins, Info, Flame, Snowflake, TrendingUp, HelpCircle, Trash2 } from 'lucide-react';
 import { InspectedUnitData } from './UnitInspector';
+import { getUnitPortraitUrl, getUnitIcon } from '../../render/unit-assets.js';
+
+function getOwnedUnitStatus(player: any, unitDefId: string): { totalCopies: number; label: string; isCloseToUpgrade: boolean } {
+  let count1 = 0;
+  let count2 = 0;
+  let count3 = 0;
+
+  for (const u of player.bench) {
+    if (u && u.unitId === unitDefId) {
+      if (u.starLevel === 1) count1++;
+      else if (u.starLevel === 2) count2++;
+      else if (u.starLevel === 3) count3++;
+    }
+  }
+
+  for (const row of player.board) {
+    for (const u of row) {
+      if (u && u.unitId === unitDefId) {
+        if (u.starLevel === 1) count1++;
+        else if (u.starLevel === 2) count2++;
+        else if (u.starLevel === 3) count3++;
+      }
+    }
+  }
+
+  const totalCopies = count1 + count2 * 3 + count3 * 9;
+  if (totalCopies === 0) {
+    return { totalCopies: 0, label: '', isCloseToUpgrade: false };
+  }
+
+  if (count3 > 0) {
+    return { totalCopies, label: '3★ (Max)', isCloseToUpgrade: false };
+  }
+
+  if (count2 === 0) {
+    if (count1 === 1) return { totalCopies, label: '1/3 ★', isCloseToUpgrade: false };
+    if (count1 === 2) return { totalCopies, label: '2/3 ★ (1 away!)', isCloseToUpgrade: true };
+  } else if (count2 === 1) {
+    if (count1 === 0) return { totalCopies, label: '1x 2★', isCloseToUpgrade: false };
+    if (count1 === 1) return { totalCopies, label: '2★ (1/3)', isCloseToUpgrade: false };
+    if (count1 === 2) return { totalCopies, label: '2★ (2/3 - 1 away!)', isCloseToUpgrade: true };
+  } else if (count2 === 2) {
+    if (count1 === 0) return { totalCopies, label: '2x 2★', isCloseToUpgrade: false };
+    if (count1 === 1) return { totalCopies, label: '2x 2★ (1/3)', isCloseToUpgrade: false };
+    if (count1 === 2) return { totalCopies, label: '3★ READY! (1 away)', isCloseToUpgrade: true };
+  }
+
+  return { totalCopies, label: `${totalCopies} Owned`, isCloseToUpgrade: false };
+}
 
 export const ShopTray: React.FC<{
   onInspectUnit?: (data: InspectedUnitData) => void;
@@ -56,6 +105,7 @@ export const ShopTray: React.FC<{
   }
 
   const odds = SHOP_ODDS[player.level] || SHOP_ODDS[1];
+  const nextOdds = player.level < 10 ? SHOP_ODDS[player.level + 1] : null;
   const interestGold = Math.min(5, Math.floor(player.gold / 10));
 
   // Economic calculations for next round
@@ -89,36 +139,36 @@ export const ShopTray: React.FC<{
 
   const costStyles: Record<
     number,
-    { border: string; bg: string; badge: string; text: string }
+    { border: string; banner: string; glow: string; text: string }
   > = {
     1: {
-      border: 'border-slate-600',
-      bg: 'bg-slate-900/90',
-      badge: 'bg-slate-700 text-slate-200',
+      border: 'border-slate-600/90',
+      banner: 'bg-slate-800/95 text-slate-100',
+      glow: 'hover:border-slate-400 hover:shadow-slate-700/30',
       text: 'text-slate-200',
     },
     2: {
-      border: 'border-emerald-500/70',
-      bg: 'bg-emerald-950/40',
-      badge: 'bg-emerald-800 text-emerald-100',
+      border: 'border-emerald-600/90',
+      banner: 'bg-emerald-800/95 text-emerald-100',
+      glow: 'hover:border-emerald-400 hover:shadow-emerald-950/50',
       text: 'text-emerald-300',
     },
     3: {
-      border: 'border-blue-500/70',
-      bg: 'bg-blue-950/40',
-      badge: 'bg-blue-800 text-blue-100',
+      border: 'border-blue-600/90',
+      banner: 'bg-blue-800/95 text-blue-100',
+      glow: 'hover:border-blue-400 hover:shadow-blue-950/50',
       text: 'text-blue-300',
     },
     4: {
-      border: 'border-purple-500/70',
-      bg: 'bg-purple-950/40',
-      badge: 'bg-purple-800 text-purple-100',
+      border: 'border-purple-600/90',
+      banner: 'bg-purple-800/95 text-purple-100',
+      glow: 'hover:border-purple-400 hover:shadow-purple-950/50',
       text: 'text-purple-300',
     },
     5: {
-      border: 'border-amber-500/80',
-      bg: 'bg-amber-950/40',
-      badge: 'bg-amber-800 text-amber-100',
+      border: 'border-amber-500',
+      banner: 'bg-amber-700/95 text-amber-100',
+      glow: 'hover:border-amber-300 hover:shadow-amber-500/30',
       text: 'text-amber-300',
     },
   };
@@ -151,13 +201,13 @@ export const ShopTray: React.FC<{
           </div>
 
           {/* Gold Counter with Detailed Expected Income Tooltip on Hover */}
-          <div className="relative flex items-center gap-2 bg-amber-500/15 border border-amber-500/40 px-3 py-1 rounded-lg shadow-inner cursor-help group">
-            <Coins className="w-4 h-4 text-amber-400 fill-amber-400/20" />
-            <span className="text-base font-extrabold font-mono text-amber-300">
-              {player.gold}
+          <div className="relative flex items-center gap-1.5 bg-amber-950/60 border border-amber-500/40 px-2.5 py-1 rounded-lg text-xs font-bold text-amber-400 cursor-help group">
+            <Coins className="w-3.5 h-3.5 text-amber-400 fill-amber-400/20" />
+            <span className="font-mono text-amber-300 font-extrabold">
+              {player.gold}g
             </span>
-            <span className="text-[10px] text-amber-400/80 font-medium">
-              (+{interestGold} Interest)
+            <span className="text-[10px] text-amber-400/70 font-normal">
+              (+{interestGold} int)
             </span>
 
             {/* Floating Gold Hover Tooltip */}
@@ -343,25 +393,58 @@ export const ShopTray: React.FC<{
       <div className="flex items-stretch gap-3">
         {/* Left Action Buttons: Reroll & Buy XP with [F] and [D] Shortcuts */}
         <div className="flex flex-col gap-2 w-44">
-          <button
-            onClick={handleBuyXp}
-            disabled={player.gold < XP_COST || player.level >= 10}
-            className="flex-1 bg-gradient-to-r from-indigo-700 to-indigo-600 hover:from-indigo-600 hover:to-indigo-500 disabled:opacity-40 disabled:pointer-events-none text-white rounded-xl p-2.5 flex items-center justify-between border border-indigo-500/50 shadow font-bold text-xs transition active:scale-95 group"
-          >
-            <div className="flex items-center gap-1.5">
-              <Zap className="w-4 h-4 text-indigo-200" />
-              <div className="flex items-center gap-1">
-                <span>Buy XP</span>
-                <span className="text-[10px] font-mono bg-indigo-900/80 px-1 rounded text-indigo-200 border border-indigo-400/30">
-                  F
-                </span>
+          <div className="relative flex-1 group/xp">
+            <button
+              onClick={handleBuyXp}
+              disabled={player.gold < XP_COST || player.level >= 10}
+              className="w-full h-full bg-gradient-to-r from-indigo-700 to-indigo-600 hover:from-indigo-600 hover:to-indigo-500 disabled:opacity-40 disabled:pointer-events-none text-white rounded-xl p-2.5 flex items-center justify-between border border-indigo-500/50 shadow font-bold text-xs transition active:scale-95"
+            >
+              <div className="flex items-center gap-1.5">
+                <Zap className="w-4 h-4 text-indigo-200" />
+                <div className="flex items-center gap-1">
+                  <span>Buy XP</span>
+                  <span className="text-[10px] font-mono bg-indigo-900/80 px-1 rounded text-indigo-200 border border-indigo-400/30">
+                    F
+                  </span>
+                </div>
               </div>
-            </div>
-            <div className="flex items-center gap-1 text-amber-300 font-mono text-xs">
-              <span>{XP_COST}</span>
-              <Coins className="w-3.5 h-3.5" />
-            </div>
-          </button>
+              <div className="flex items-center gap-1 text-amber-300 font-mono text-xs">
+                <span>{XP_COST}</span>
+                <Coins className="w-3.5 h-3.5" />
+              </div>
+            </button>
+
+            {/* Next Level Shop Odds Comparison Tooltip */}
+            {nextOdds && (
+              <div className="absolute bottom-full left-0 mb-2 w-64 bg-[#0a0e1a] border border-indigo-500/40 rounded-xl p-2.5 shadow-2xl shadow-black z-[9999] opacity-0 group-hover/xp:opacity-100 transition-opacity duration-200 pointer-events-none flex flex-col gap-1.5 text-left">
+                <div className="flex items-center justify-between border-b border-slate-800 pb-1 text-xs font-bold text-indigo-300">
+                  <span>Next Level ({player.level + 1}) Shop Odds</span>
+                </div>
+                <div className="grid grid-cols-5 gap-1 text-center text-[10px] font-mono font-bold">
+                  <div className="flex flex-col">
+                    <span className="text-slate-400">$1</span>
+                    <span className="text-slate-200">{Math.round(nextOdds[1] * 100)}%</span>
+                  </div>
+                  <div className="flex flex-col">
+                    <span className="text-emerald-400">$2</span>
+                    <span className="text-emerald-300">{Math.round(nextOdds[2] * 100)}%</span>
+                  </div>
+                  <div className="flex flex-col">
+                    <span className="text-blue-400">$3</span>
+                    <span className="text-blue-300">{Math.round(nextOdds[3] * 100)}%</span>
+                  </div>
+                  <div className="flex flex-col">
+                    <span className="text-purple-400">$4</span>
+                    <span className="text-purple-300">{Math.round(nextOdds[4] * 100)}%</span>
+                  </div>
+                  <div className="flex flex-col">
+                    <span className="text-amber-400">$5</span>
+                    <span className="text-amber-300">{Math.round(nextOdds[5] * 100)}%</span>
+                  </div>
+                </div>
+              </div>
+            )}
+          </div>
 
           <button
             onClick={handleReroll}
@@ -414,7 +497,7 @@ export const ShopTray: React.FC<{
               });
               onClearDraggedUnit?.();
             }}
-            className={`flex-1 h-28 rounded-xl border-2 flex items-center justify-center gap-4 transition-all duration-150 shadow-2xl cursor-pointer ${
+            className={`flex-1 h-32 rounded-xl border-2 flex items-center justify-center gap-4 transition-all duration-150 shadow-2xl cursor-pointer ${
               isSellHovered
                 ? 'border-red-500 bg-red-950/90 text-red-100 scale-[1.01] ring-4 ring-red-500/50'
                 : 'border-red-500/80 bg-slate-900/95 text-red-300 animate-pulse'
@@ -439,7 +522,7 @@ export const ShopTray: React.FC<{
                 return (
                   <div
                     key={idx}
-                    className="h-28 rounded-xl border border-dashed border-slate-800 bg-slate-900/30 flex items-center justify-center text-xs text-slate-600"
+                    className="h-32 rounded-xl border border-dashed border-slate-800 bg-slate-900/30 flex items-center justify-center text-xs text-slate-600 font-semibold"
                   >
                     Sold
                   </div>
@@ -449,8 +532,10 @@ export const ShopTray: React.FC<{
               const def = UNITS[unitId];
               if (!def) return null;
 
-              const style = costStyles[def.cost];
+              const style = costStyles[def.cost] || costStyles[1];
               const canAfford = player.gold >= def.cost;
+              const portraitUrl = getUnitPortraitUrl(unitId);
+              const ownedInfo = getOwnedUnitStatus(player, unitId);
 
               return (
                 <div
@@ -460,51 +545,114 @@ export const ShopTray: React.FC<{
                     e.preventDefault();
                     onInspectUnit?.({ unitDefId: unitId });
                   }}
-                  className={`h-28 rounded-xl border ${style.border} ${style.bg} p-2 flex flex-col justify-between cursor-pointer transition transform hover:-translate-y-1 hover:shadow-lg active:scale-95 group relative ${
+                  className={`h-32 rounded-xl border-2 ${style.border} ${style.glow} flex flex-col justify-between cursor-pointer transition-all duration-150 transform hover:-translate-y-1 hover:shadow-xl active:scale-95 group relative overflow-hidden select-none ${
                     !canAfford ? 'opacity-50 grayscale cursor-not-allowed' : ''
                   }`}
+                  title={`${def.name} ($${def.cost}) - Click to Buy, Right-Click to Inspect`}
                 >
-                  {/* Header: Name and Cost */}
-                  <div className="flex items-start justify-between">
-                    <div className="flex flex-col min-w-0">
-                      <span className={`text-xs font-bold truncate ${style.text}`}>
-                        {def.name}
-                      </span>
-                      <div className="flex items-center gap-1 mt-0.5 flex-wrap">
-                        {def.origins.map((o) => (
-                          <span key={o} className="text-[9px] bg-slate-800 text-slate-300 px-1 py-0.2 rounded">
-                            {o}
-                          </span>
-                        ))}
-                        {def.classes.map((c) => (
-                          <span key={c} className="text-[9px] bg-slate-800 text-slate-300 px-1 py-0.2 rounded">
-                            {c}
-                          </span>
-                        ))}
-                      </div>
+                  {/* Hero Portrait Background */}
+                  <div className="absolute inset-0 z-0 overflow-hidden bg-slate-950">
+                    <img
+                      src={portraitUrl}
+                      alt={def.name}
+                      className="w-full h-full object-cover object-[center_20%] transition-transform duration-300 group-hover:scale-105"
+                      onError={(e) => {
+                        (e.currentTarget as HTMLElement).style.display = 'none';
+                      }}
+                    />
+
+                    {/* Dark gradient vignettes for contrast */}
+                    <div className="absolute inset-0 bg-gradient-to-r from-slate-950/95 via-slate-950/35 to-transparent pointer-events-none" />
+                    <div className="absolute inset-0 bg-gradient-to-t from-slate-950/90 via-transparent to-black/25 pointer-events-none" />
+                  </div>
+
+                  {/* Top: Traits Column on the Left & Scaling / Quick Inspect on Right */}
+                  <div className="relative z-10 flex items-start justify-between p-1.5 min-h-0">
+                    <div className="flex flex-col gap-0.5 max-w-[70%]">
+                      {def.origins.map((o) => {
+                        const tr = TRAITS[o];
+                        const isActive = player.activeTraits.some((t) => t.traitId === o && t.activeTier > 0);
+                        return (
+                          <div
+                            key={o}
+                            className={`flex items-center gap-1 px-1.5 py-0.5 rounded text-[9px] leading-none font-semibold truncate shadow-sm backdrop-blur-md transition ${
+                              isActive
+                                ? 'bg-amber-950/90 border border-amber-400 text-amber-200 ring-1 ring-amber-400/50'
+                                : 'bg-black/80 border border-slate-700/60 text-slate-300'
+                            }`}
+                          >
+                            <span className="text-[10px] leading-none">{tr?.icon || '🏛️'}</span>
+                            <span className="truncate">{o}</span>
+                          </div>
+                        );
+                      })}
+                      {def.classes.map((c) => {
+                        const tr = TRAITS[c];
+                        const isActive = player.activeTraits.some((t) => t.traitId === c && t.activeTier > 0);
+                        return (
+                          <div
+                            key={c}
+                            className={`flex items-center gap-1 px-1.5 py-0.5 rounded text-[9px] leading-none font-semibold truncate shadow-sm backdrop-blur-md transition ${
+                              isActive
+                                ? 'bg-indigo-950/90 border border-indigo-400 text-indigo-200 ring-1 ring-indigo-400/50'
+                                : 'bg-black/80 border border-slate-700/60 text-slate-300'
+                            }`}
+                          >
+                            <span className="text-[10px] leading-none">{tr?.icon || '⚔️'}</span>
+                            <span className="truncate">{c}</span>
+                          </div>
+                        );
+                      })}
                     </div>
 
-                    <div className="flex items-center gap-1 shrink-0">
+                    {/* Right: Owned Status Badge and Quick Inspect */}
+                    <div className="flex flex-col items-end gap-1 shrink-0">
+                      {ownedInfo.label ? (
+                        <span
+                          className={`text-[9px] font-mono font-bold px-1.5 py-0.5 rounded border backdrop-blur-md shadow leading-tight ${
+                            ownedInfo.isCloseToUpgrade
+                              ? 'bg-amber-500 text-slate-950 border-amber-300 font-black animate-pulse'
+                              : 'bg-slate-900/90 text-slate-200 border-slate-600'
+                          }`}
+                        >
+                          {ownedInfo.label}
+                        </span>
+                      ) : (
+                        <span
+                          className={`text-[9px] font-extrabold px-1.5 py-0.5 rounded border backdrop-blur-md shadow leading-tight ${
+                            def.ability.damageType === 'magic'
+                              ? 'bg-cyan-950/85 text-cyan-300 border-cyan-500/50'
+                              : def.ability.damageType === 'true'
+                              ? 'bg-fuchsia-950/85 text-fuchsia-300 border-fuchsia-500/50'
+                              : 'bg-amber-950/85 text-amber-300 border-amber-500/50'
+                          }`}
+                        >
+                          {def.ability.damageType === 'magic' ? '✨ AP' : def.ability.damageType === 'true' ? '⚡ True' : '⚔️ AD'}
+                        </span>
+                      )}
+
                       <button
                         onClick={(e) => {
                           e.stopPropagation();
                           onInspectUnit?.({ unitDefId: unitId });
                         }}
-                        className="opacity-0 group-hover:opacity-100 p-0.5 text-slate-400 hover:text-white bg-slate-800 rounded transition"
-                        title="Inspect Unit Stats"
+                        className="opacity-0 group-hover:opacity-100 p-0.5 text-slate-300 hover:text-white bg-black/70 hover:bg-black/90 rounded-md border border-slate-700 transition shrink-0"
+                        title="Inspect Unit"
                       >
                         <Info className="w-3 h-3" />
                       </button>
-                      <div className="flex items-center gap-0.5 text-amber-300 font-extrabold font-mono text-xs bg-amber-950/60 border border-amber-500/40 px-1.5 py-0.5 rounded">
-                        <span>{def.cost}</span>
-                        <Coins className="w-3 h-3" />
-                      </div>
                     </div>
                   </div>
 
-                  {/* Footer: Ability snippet */}
-                  <div className="text-[10px] text-slate-400 line-clamp-1 border-t border-slate-800/80 pt-1">
-                    <span className="font-semibold text-slate-300">{def.ability.name}:</span> {def.ability.description}
+                  {/* Bottom Cost Banner: Fixed Height & shrink-0 */}
+                  <div className={`relative z-10 h-7 shrink-0 ${style.banner} px-2 flex items-center justify-between border-t border-black/50`}>
+                    <span className="text-xs font-black text-white tracking-wide truncate drop-shadow-md">
+                      {def.name}
+                    </span>
+                    <div className="flex items-center gap-1 text-amber-300 font-mono font-black text-xs shrink-0 drop-shadow-md bg-black/40 px-1.5 py-0.5 rounded">
+                      <Coins className="w-3 h-3 text-amber-400" />
+                      <span>{def.cost}</span>
+                    </div>
                   </div>
                 </div>
               );

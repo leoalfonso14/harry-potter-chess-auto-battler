@@ -64,6 +64,7 @@ export const ArenaCanvas: React.FC<{
   viewingPlayerId?: string;
   selectedBenchIndex: number | null;
   selectedItemSlot: number | null;
+  highlightedTraitUnitIds?: Set<string> | null;
   onClearSelection: () => void;
   onInspectUnit?: (data: InspectedUnitData | null) => void;
   onInspectUnitUpdate?: (updater: (prev: InspectedUnitData | null) => InspectedUnitData | null) => void;
@@ -74,6 +75,7 @@ export const ArenaCanvas: React.FC<{
   viewingPlayerId,
   selectedBenchIndex,
   selectedItemSlot,
+  highlightedTraitUnitIds,
   onClearSelection,
   onInspectUnit,
   onInspectUnitUpdate,
@@ -190,12 +192,16 @@ export const ArenaCanvas: React.FC<{
     };
   }, []);
 
-  // 2. Clear visual highlights on canvas if inspected unit closes
+  // 2. Trait highlight on board
   useEffect(() => {
     if (rendererRef.current) {
-      rendererRef.current.clearHighlights();
+      if (highlightedTraitUnitIds && highlightedTraitUnitIds.size > 0) {
+        rendererRef.current.highlightTraitUnits(highlightedTraitUnitIds);
+      } else {
+        rendererRef.current.clearHighlights();
+      }
     }
-  }, []);
+  }, [highlightedTraitUnitIds]);
 
   // 3. Stable Canvas Updates
   useEffect(() => {

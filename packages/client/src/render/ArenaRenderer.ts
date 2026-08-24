@@ -1,12 +1,14 @@
-import { Application, Container, Graphics, Text, TextStyle } from 'pixi.js';
+import { Application, Container, Graphics, Text, TextStyle, Sprite } from 'pixi.js';
 import { BoardUnit, CombatResult, CombatEvent, UNITS, ALL_ITEMS } from '@autobattler/shared';
+import { getUnitIcon, getUnitTexture, getUnitTextureSync, hasUnitImage, preloadAllUnitTextures } from './unit-assets.js';
 
 interface UnitVisual {
   container: Container;
   bgGraphic: Graphics;
+  shieldAuraGraphic: Graphics;
   hpGraphic: Graphics;
   manaGraphic: Graphics;
-  nameText: Text;
+  portraitContainer: Container;
   starText: Text;
   itemContainer: Container;
   targetX: number;
@@ -17,6 +19,7 @@ interface UnitVisual {
   currentMana: number;
   maxMana: number;
   isDead: boolean;
+  unitDefId: string;
 }
 
 interface FloatingText {
@@ -112,6 +115,9 @@ export class ArenaRenderer {
     this.app = app;
     this.container.innerHTML = '';
     app.canvas.style.display = 'block';
+
+    // Preload all champion textures into cache
+    preloadAllUnitTextures().catch(() => {});
     app.canvas.style.width = '100%';
     app.canvas.style.height = '100%';
     this.container.appendChild(app.canvas);
@@ -260,6 +266,22 @@ export class ArenaRenderer {
     g.stroke({ width: 2.5, color, alpha: 0.95 });
 
     this.highlightLayer.addChild(g);
+  }
+
+  public highlightTraitUnits(traitUnitIds: Set<string> | null): void {
+    this.highlightLayer.removeChildren();
+    if (!traitUnitIds || traitUnitIds.size === 0) return;
+
+    for (const vis of this.unitVisuals.values()) {
+      if (vis.isDead || !vis.container.visible) continue;
+      if (vis.unitDefId && traitUnitIds.has(vis.unitDefId)) {
+        const g = new Graphics();
+        g.circle(vis.container.x, vis.container.y, this.hexRadius * 0.92);
+        g.stroke({ width: 2.5, color: 0xf59e0b, alpha: 0.95 });
+        g.fill({ color: 0xf59e0b, alpha: 0.18 });
+        this.highlightLayer.addChild(g);
+      }
+    }
   }
 
   public clearHighlights(): void {
@@ -434,19 +456,83 @@ export class ArenaRenderer {
 
     container.addChild(bgGraphic);
 
-    // Champion Name
-    const nameStyle = new TextStyle({
-      fill: 0xf8fafc,
-      fontSize: Math.max(9, Math.min(12, Math.floor(radius * 0.42))),
-      fontWeight: 'bold',
-      fontFamily: 'Inter',
-      align: 'center',
-    });
-    const firstName = def.name.split(' ')[0];
-    const nameText = new Text({ text: firstName, style: nameStyle });
-    nameText.anchor.set(0.5);
-    nameText.y = -2;
-    container.addChild(nameText);
+    // Crystalline Shield Aura Ring (Visible when shielded)
+    const shieldAuraGraphic = new Graphics();
+    container.addChild(shieldAuraGraphic);
+
+    // Champion Sprite / Portrait Graphic
+    const portraitContainer = new Container();
+    container.addChild(portraitContainer);
+
+    const innerRadius = radius - 2.5;
+    const diameter = innerRadius * 2;
+
+    const cachedTex = getUnitTextureSync(unit.unitId);
+    if (cachedTex) {
+      // Immediate synchronous render of circular masked portrait
+      const sprite = new Sprite(cachedTex);
+      sprite.anchor.set(0.5);
+
+      const aspect = (cachedTex.width || 1) / (cachedTex.height || 1);
+      if (aspect > 1.2) {
+        sprite.height = diameter;
+        sprite.width = diameter * aspect;
+        sprite.x = -diameter * (aspect - 1) * 0.42; // Center right-side framed character
+      } else {
+        sprite.width = diameter;
+        sprite.height = diameter;
+      }
+
+      const mask = new Graphics();
+      mask.circle(0, 0, innerRadius);
+      mask.fill({ color: 0xffffff });
+      sprite.mask = mask;
+
+      portraitContainer.addChild(mask);
+      portraitContainer.addChild(sprite);
+    } else {
+      if (!hasUnitImage(unit.unitId)) {
+        const unitIcon = getUnitIcon(unit.unitId);
+        const iconStyle = new TextStyle({
+          fontSize: Math.max(16, Math.min(22, Math.floor(radius * 0.9))),
+          fontFamily: 'Inter, "Apple Color Emoji", "Segoe UI Emoji"',
+          align: 'center',
+        });
+        const iconText = new Text({ text: unitIcon, style: iconStyle });
+        iconText.anchor.set(0.5);
+        iconText.y = -1;
+        portraitContainer.addChild(iconText);
+      }
+
+      // Asynchronously load and attach if not yet in cache
+      getUnitTexture(unit.unitId)
+        .then((tex) => {
+          if (!tex || container.destroyed) return;
+
+          const sprite = new Sprite(tex);
+          sprite.anchor.set(0.5);
+
+          const aspect = (tex.width || 1) / (tex.height || 1);
+          if (aspect > 1.2) {
+            sprite.height = diameter;
+            sprite.width = diameter * aspect;
+            sprite.x = -diameter * (aspect - 1) * 0.42;
+          } else {
+            sprite.width = diameter;
+            sprite.height = diameter;
+          }
+
+          const mask = new Graphics();
+          mask.circle(0, 0, innerRadius);
+          mask.fill({ color: 0xffffff });
+          sprite.mask = mask;
+
+          portraitContainer.removeChildren();
+          portraitContainer.addChild(mask);
+          portraitContainer.addChild(sprite);
+        })
+        .catch(() => {});
+    }
 
     // Star Level Badge
     const stars = '★'.repeat(unit.starLevel);
@@ -628,9 +714,10 @@ export class ArenaRenderer {
     this.unitVisuals.set(unit.id, {
       container,
       bgGraphic,
+      shieldAuraGraphic,
       hpGraphic,
       manaGraphic,
-      nameText,
+      portraitContainer,
       starText,
       itemContainer,
       targetX: x,
@@ -641,34 +728,61 @@ export class ArenaRenderer {
       currentMana: unit.currentMana,
       maxMana: unit.maxMana,
       isDead: false,
+      unitDefId: unit.unitId,
     });
+  }
+
+  private updateShieldAura(g: Graphics, radius: number, shield = 0): void {
+    g.clear();
+    if (shield <= 0) return;
+
+    // Glowing crystalline protective shield perimeter ring
+    g.circle(0, 0, radius + 2.5);
+    g.stroke({ width: 2.5, color: 0xffffff, alpha: 0.9 });
+
+    g.circle(0, 0, radius + 4.5);
+    g.stroke({ width: 1.5, color: 0x38bdf8, alpha: 0.6 });
   }
 
   private updateHpBar(g: Graphics, hp: number, maxHp: number, radius: number, shield = 0): void {
     g.clear();
     const barW = radius * 2;
-    const barH = 4;
+    const barH = 4.5;
     const barX = -radius;
     const barY = radius + 2;
 
     // Background track
-    g.rect(barX, barY, barW, barH);
-    g.fill({ color: 0x0f172a, alpha: 0.95 });
+    g.rect(barX - 0.5, barY - 0.5, barW + 1, barH + 1);
+    g.fill({ color: 0x090d16, alpha: 0.95 });
+    g.stroke({ width: 0.75, color: 0x020617 });
 
-    // HP fill
-    const pct = Math.max(0, Math.min(1, hp / maxHp));
-    g.rect(barX, barY, barW * pct, barH);
-    g.fill({ color: pct > 0.5 ? 0x22c55e : pct > 0.25 ? 0xeab308 : 0xef4444 });
-
-    // Shield overlay
-    if (shield > 0) {
-      const shieldPct = Math.min(1, shield / maxHp);
-      const shieldW = barW * shieldPct;
-      g.rect(barX + barW * pct, barY, Math.min(barW - barW * pct, shieldW), barH);
-      g.fill({ color: 0x38bdf8, alpha: 0.85 });
+    // 1. Green / Yellow / Red Health Portion
+    const hpPct = Math.max(0, Math.min(1, hp / maxHp));
+    const hpW = barW * hpPct;
+    if (hpPct > 0) {
+      g.rect(barX, barY, hpW, barH);
+      g.fill({ color: hpPct > 0.5 ? 0x22c55e : hpPct > 0.25 ? 0xeab308 : 0xef4444 });
     }
 
-    g.stroke({ width: 0.75, color: shield > 0 ? 0x38bdf8 : 0x020617 });
+    // 2. Crisp Solid White Shield Portion (Extending immediately to the right of green HP)
+    if (shield > 0) {
+      const shieldPct = shield / maxHp;
+      const shieldStartX = barX + hpW;
+      const maxAvailableW = Math.max(0, barW - hpW);
+      const shieldW = Math.min(maxAvailableW, barW * shieldPct);
+
+      if (shieldW > 0) {
+        g.rect(shieldStartX, barY, shieldW, barH);
+        g.fill({ color: 0xffffff, alpha: 0.95 }); // Solid white
+        g.stroke({ width: 0.75, color: 0x94a3b8 }); // Light silver edge
+      }
+
+      // Over-shield indicator if HP + shield exceeds maxHp
+      if (hp + shield > maxHp) {
+        g.rect(barX + barW - 2.5, barY - 1, 3, barH + 2);
+        g.fill({ color: 0x38bdf8, alpha: 1.0 }); // Bright cyan cap
+      }
+    }
   }
 
   private updateManaBar(g: Graphics, mana: number, maxMana: number, radius: number): void {
@@ -836,21 +950,12 @@ export class ArenaRenderer {
       const vis = this.unitVisuals.get(ev.targetId);
       if (vis && ev.value !== undefined) {
         if (ev.remainingHp !== undefined) vis.currentHp = ev.remainingHp;
+        if (ev.remainingShield !== undefined) vis.currentShield = ev.remainingShield;
         if (ev.remainingMana !== undefined) vis.currentMana = ev.remainingMana;
         const radius = this.hexRadius * 0.72;
         this.updateHpBar(vis.hpGraphic, vis.currentHp, vis.maxHp, radius, vis.currentShield);
         this.updateManaBar(vis.manaGraphic, vis.currentMana, vis.maxMana, radius);
-
-        if (!isFastForward) {
-          this.spawnFloatingCombatText(
-            vis.container.x,
-            vis.container.y - 20,
-            `-${ev.value}`,
-            ev.isCrit ? 0xef4444 : ev.damageType === 'magic' ? 0x38bdf8 : 0xf97316,
-            ev.isCrit ? 15 : 12,
-            Boolean(ev.isCrit)
-          );
-        }
+        this.updateShieldAura(vis.shieldAuraGraphic, radius, vis.currentShield);
 
         if (this.inspectedUnitId === ev.targetId && this.onUnitInspectUpdate) {
           this.onUnitInspectUpdate({
@@ -867,19 +972,10 @@ export class ArenaRenderer {
       const vis = this.unitVisuals.get(ev.targetId);
       if (vis && ev.value !== undefined) {
         if (ev.remainingHp !== undefined) vis.currentHp = ev.remainingHp;
+        if (ev.remainingShield !== undefined) vis.currentShield = ev.remainingShield;
         const radius = this.hexRadius * 0.72;
         this.updateHpBar(vis.hpGraphic, vis.currentHp, vis.maxHp, radius, vis.currentShield);
-
-        if (!isFastForward) {
-          this.spawnFloatingCombatText(
-            vis.container.x,
-            vis.container.y - 20,
-            `+${ev.value}`,
-            0x22c55e,
-            13,
-            false
-          );
-        }
+        this.updateShieldAura(vis.shieldAuraGraphic, radius, vis.currentShield);
 
         if (this.inspectedUnitId === ev.targetId && this.onUnitInspectUpdate) {
           this.onUnitInspectUpdate({
@@ -895,20 +991,10 @@ export class ArenaRenderer {
     } else if (ev.type === 'SHIELD' && ev.targetId) {
       const vis = this.unitVisuals.get(ev.targetId);
       if (vis && ev.value !== undefined) {
-        vis.currentShield = ev.value;
+        vis.currentShield = ev.remainingShield !== undefined ? ev.remainingShield : ev.value;
         const radius = this.hexRadius * 0.72;
         this.updateHpBar(vis.hpGraphic, vis.currentHp, vis.maxHp, radius, vis.currentShield);
-
-        if (!isFastForward) {
-          this.spawnFloatingCombatText(
-            vis.container.x,
-            vis.container.y - 20,
-            `+${ev.value} 🛡️`,
-            0x38bdf8,
-            13,
-            true
-          );
-        }
+        this.updateShieldAura(vis.shieldAuraGraphic, radius, vis.currentShield);
 
         if (this.inspectedUnitId === ev.targetId && this.onUnitInspectUpdate) {
           this.onUnitInspectUpdate({
@@ -1030,33 +1116,15 @@ export class ArenaRenderer {
   }
 
   private spawnFloatingCombatText(
-    x: number,
-    y: number,
-    str: string,
-    color: number,
-    fontSize: number,
-    bold: boolean
+    _x: number,
+    _y: number,
+    _str: string,
+    _color: number,
+    _fontSize: number,
+    _bold: boolean
   ): void {
-    const style = new TextStyle({
-      fill: color,
-      fontSize,
-      fontWeight: bold ? 'bold' : 'normal',
-      fontFamily: 'Inter',
-      stroke: { color: 0x000000, width: 3 },
-    });
-
-    const txt = new Text({ text: str, style });
-    txt.anchor.set(0.5);
-    txt.x = x + (Math.random() * 20 - 10);
-    txt.y = y;
-
-    this.uiLayer.addChild(txt);
-    this.floatingTexts.push({
-      text: txt,
-      vy: -1.2,
-      alpha: 1.0,
-      life: 1.0,
-    });
+    // Disabled floating numbers on screen per user requirement
+    return;
   }
 
   public destroy(): void {

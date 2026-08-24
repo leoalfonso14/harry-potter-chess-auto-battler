@@ -22,10 +22,10 @@ describe('UnitPool and Shop Generation', () => {
     const shop = pool.drawShop(3, 5);
     assert.strictEqual(shop.length, 5);
 
-    // If neville_longbottom was in shop, its count should decrease
-    const drawnNevilles = shop.filter(id => id === 'neville_longbottom').length;
+    // Decrementing on purchase should reduce available pool
+    pool.decrementPool('neville_longbottom');
     const newCount = pool.getAvailableCount('neville_longbottom');
-    assert.strictEqual(newCount, initialNevilleCount - drawnNevilles);
+    assert.strictEqual(newCount, initialNevilleCount - 1);
   });
 
   it('should return copies correctly to pool when units are sold', () => {

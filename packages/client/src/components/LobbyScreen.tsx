@@ -1,13 +1,15 @@
 import React, { useState } from 'react';
 import { useGameSocket } from '../context/GameSocketContext';
-import { Shield, Sparkles, Swords, Users, Bot, BookOpen } from 'lucide-react';
+import { Shield, Sparkles, Swords, Users, Bot, BookOpen, Layers } from 'lucide-react';
 import { ItemRecipeModal } from './HUD/ItemRecipeModal';
+import { SynergyGuideModal } from './HUD/SynergyGuideModal';
 
 export const LobbyScreen: React.FC = () => {
   const { connectToRoom } = useGameSocket();
   const [name, setName] = useState('Tactician');
   const [roomId, setRoomId] = useState('default');
   const [showItemModal, setShowItemModal] = useState(false);
+  const [showSynergyModal, setShowSynergyModal] = useState(false);
 
   const handleStartSolo = () => {
     const soloRoomId = `solo_${Date.now()}`;
@@ -90,14 +92,24 @@ export const LobbyScreen: React.FC = () => {
           </div>
         </div>
 
-        {/* Recipe Book Button */}
-        <button
-          onClick={() => setShowItemModal(true)}
-          className="w-full bg-slate-800/80 hover:bg-slate-800 text-slate-300 hover:text-white rounded-lg py-2 text-xs font-semibold flex items-center justify-center gap-2 border border-slate-700 transition"
-        >
-          <BookOpen className="w-4 h-4 text-amber-400" />
-          <span>View Item Combination Matrix</span>
-        </button>
+        {/* Recipe Book & Synergy Compendium Buttons */}
+        <div className="grid grid-cols-2 gap-2">
+          <button
+            onClick={() => setShowItemModal(true)}
+            className="bg-slate-800/80 hover:bg-slate-800 text-slate-300 hover:text-white rounded-lg py-2.5 px-3 text-xs font-semibold flex items-center justify-center gap-1.5 border border-slate-700 transition"
+          >
+            <BookOpen className="w-4 h-4 text-amber-400 shrink-0" />
+            <span className="truncate">Item Matrix</span>
+          </button>
+
+          <button
+            onClick={() => setShowSynergyModal(true)}
+            className="bg-slate-800/80 hover:bg-slate-800 text-slate-300 hover:text-white rounded-lg py-2.5 px-3 text-xs font-semibold flex items-center justify-center gap-1.5 border border-slate-700 transition"
+          >
+            <Layers className="w-4 h-4 text-indigo-400 shrink-0" />
+            <span className="truncate">Synergies & Units</span>
+          </button>
+        </div>
 
         {/* Quick Rules Footer */}
         <div className="border-t border-slate-800/80 pt-3 text-[11px] text-slate-500 flex flex-col gap-1 text-center">
@@ -108,6 +120,8 @@ export const LobbyScreen: React.FC = () => {
       </div>
 
       <ItemRecipeModal isOpen={showItemModal} onClose={() => setShowItemModal(false)} />
+      <SynergyGuideModal isOpen={showSynergyModal} onClose={() => setShowSynergyModal(false)} />
     </div>
   );
 };
+

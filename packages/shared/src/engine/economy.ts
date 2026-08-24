@@ -1,5 +1,6 @@
 import { BoardUnit, StarLevel } from '../types/unit.js';
 import { UNITS } from '../data/units.js';
+import { ALL_ITEMS, combineItems } from '../data/items.js';
 import { PlayerState } from '../types/game.js';
 import { calculateSynergies } from './synergy-calculator.js';
 
@@ -143,6 +144,30 @@ export function checkAndCombineUnits(player: PlayerState, benchOnly = false): Co
             ...third.unit.items,
           ];
 
+          // Combine any pairs of base components into completed artifacts
+          let comboFound = true;
+          while (comboFound) {
+            comboFound = false;
+            for (let i = 0; i < combinedItems.length; i++) {
+              const itmA = combinedItems[i];
+              if (!itmA || ALL_ITEMS[itmA]?.isArtifact) continue;
+
+              for (let j = i + 1; j < combinedItems.length; j++) {
+                const itmB = combinedItems[j];
+                if (!itmB || ALL_ITEMS[itmB]?.isArtifact) continue;
+
+                const combo = combineItems(itmA as any, itmB as any);
+                if (combo) {
+                  combinedItems[i] = combo.id;
+                  combinedItems.splice(j, 1);
+                  comboFound = true;
+                  break;
+                }
+              }
+              if (comboFound) break;
+            }
+          }
+
           // Max 3 items on a unit, rest return to item bench
           const unitItems = combinedItems.slice(0, 3);
           const returnedItems = combinedItems.slice(3);
@@ -188,6 +213,8 @@ export function checkAndCombineUnits(player: PlayerState, benchOnly = false): Co
             const emptySlot = player.itemBench.indexOf(null);
             if (emptySlot !== -1) {
               player.itemBench[emptySlot] = itm;
+            } else {
+              player.itemBench.push(itm);
             }
           }
 

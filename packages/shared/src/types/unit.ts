@@ -11,20 +11,13 @@ export type Origin =
   | "Ghost"
   | "Magical Creature"
   | "Ministry"
-  | "Professor"
-  | "Magizoologist"
   | "House-Elf"
   | "Dark Wizard"
   | "Beauxbatons"
   | "Durmstrang"
   | "Divine"
   | "Wild"
-  | "Dragon"
-  | "Golden Trio"
-  | "Inquisitorial Squad"
-  | "Weasley"
-  | "Malfoy"
-  | "Patil Sisters";
+  | "Dragon";
 
 export type CombatRole =
   | "Tank"
@@ -44,7 +37,22 @@ export type Class =
   | "Duelist"
   | "Trickster"
   | "Animagi"
-  | "Handler";
+  | "Handler"
+  | "Magizoologist"
+  | "Herbologist"
+  | "Diviner"
+  | "Auror"
+  | "Curse-Caster"
+  | "Professor"
+  | "Golden Trio"
+  | "Inquisitorial Squad"
+  | "Weasley"
+  | "Malfoy"
+  | "Patil Sisters"
+  | "Headmaster"
+  | "Dark Lord"
+  | "Founder"
+  | "Grand Sorcerer";
 
 export interface UnitStats {
   hp: [number, number, number]; // [1-star, 2-star, 3-star]
@@ -72,7 +80,9 @@ export interface UnitAbility {
   description: string;
   manaCost: number;
   damageType: "physical" | "magic" | "true";
-  damageValues: [number, number, number]; // [1-star, 2-star, 3-star]
+  damageValues?: [number, number, number]; // [1-star, 2-star, 3-star]
+  shieldValues?: [number, number, number]; // [1-star, 2-star, 3-star]
+  healValues?: [number, number, number]; // [1-star, 2-star, 3-star]
   targetType: AbilityTargetType;
   radius?: number;
   duration?: number;
