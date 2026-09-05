@@ -6,10 +6,11 @@ A browser-based, 8-player auto battler built with a full-stack TypeScript archit
 
 ## ⚡ Tech Stack & Architecture
 
-- **Frontend UI**: React 19 + Tailwind CSS + Lucide Icons (HUD, Shop tray, Bench, Items, Leaderboard, Damage meters).
+- **Frontend UI**: React 19 + Tailwind CSS + Lucide Icons (HUD, Shop tray, Bench, Items, Leaderboard, Damage meters, Synergy Guide).
 - **2D WebGL Render Engine**: PixiJS 8 (Tactical grid, sprite cards, health/mana gauges, spell effects, floating combat text).
+- **3D Desktop Client (Unity URP)**: Companion standalone 3D client located in [`magical-chess-auto-battler`](../magical-chess-auto-battler) targeting Windows & macOS with full cross-play.
 - **Authoritative Server**: Node.js + WebSockets / Express (Lobby matchmaking, synchronized phase timer loop, 20-tick/sec deterministic combat simulation, bot controller).
-- **Shared Core Library**: `@autobattler/shared` (Champion pool, item crafting matrix, trait synergies, economy math, pathfinding).
+- **Shared Core Library**: `@autobattler/shared` (Champion pool, item crafting matrix, trait synergies, dynamic combat buffs, economy math, pathfinding).
 
 ---
 
@@ -53,17 +54,17 @@ npm run dev:client
 
 ## 🧪 Running Automated Tests
 
-Run the full suite of unit tests across economy, combat simulation, shop odds, pool depletion, and room matchmaking:
+Run the full suite of unit tests across economy, combat simulation, dynamic trait bonuses, shop odds, pool depletion, and room matchmaking:
 ```bash
 npm test
 ```
 
 Or test specific packages:
 ```bash
-# Test shared combat simulation, economy, 3-star merge, and pool:
+# Test shared combat simulation, economy, 3-star merge, traits, and pool:
 npm run --workspace=@autobattler/shared test
 
-# Test server room lifecycle and bot matching:
+# Test server room lifecycle, PvE stages, and bot matching:
 npm run --workspace=@autobattler/server test
 ```
 
@@ -79,11 +80,19 @@ npm run --workspace=@autobattler/server test
    - Arrange frontline/midline/backline positioning on the grid and equip items.
 2. **Combat Phase (30s)**:
    - Server pairs players (or assigns bot matches).
-   - Units execute autonomous deterministic combat at 20 ticks/second with pathfinding, mana gain, basic attacks, and ability spells.
+   - Units execute autonomous deterministic combat at 20 ticks/second with pathfinding, mana gain, basic attacks, ability spells, dynamic shields, and overtime acceleration.
 3. **Resolution Phase (3s)**:
    - Losers take avatar damage based on surviving enemy unit tiers and stage progression.
    - Eliminated players return all copies back into the global shared pool.
    - Last player standing wins the crown!
+
+### Dynamic Synergy & Lore Origins
+Field unique synergies based on houses, families, and iconic allegiances:
+- **Golden Trio (Harry, Hermione, Ron)**: Amplifies team spell power and critical strike chance.
+- **Patil Sisters (Padma & Parvati)**: Synchronized attack speed and mirror damage.
+- **Inquisitorial Squad (Umbridge, Malfoy, Crabbe, Goyle, Filch)**: Detains highest-threat enemy at combat start.
+- **Weasley Family & Malfoy Family**: Exponential shield generation and gold plundering.
+- **Hogwarts Founders (Gryffindor, Slytherin, Ravenclaw, Hufflepuff)**: Ascended stats and omnivamp.
 
 ### Item Combination Matrix
 Combining any 2 basic components produces a completed artifact:
@@ -91,4 +100,4 @@ Combining any 2 basic components produces a completed artifact:
 - **Dragon Scale** + **Phoenix Feather** $\rightarrow$ **Gryffindor Vest** (+300 HP, +40 Armor, heals 2% max HP/s)
 - **Quick-Silver** + **Wand Core** $\rightarrow$ **Spell-Weaver Bow** (Attacks shred enemy Magic Resist and grant Attack Speed)
 - **Mandrake Leaf** + **Phoenix Feather** $\rightarrow$ **Resilient Cloak** (Emits an aura reducing enemy Magic Damage by 30%)
-- ... and 11 additional recipes viewable in-game via the Recipe Book!
+- ... and 32 additional recipes viewable in-game via the Recipe Book and Synergy Guide!

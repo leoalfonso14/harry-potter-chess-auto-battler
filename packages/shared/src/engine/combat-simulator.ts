@@ -212,6 +212,8 @@ export class CombatSimulator {
         value: u.currentHp,
         remainingHp: u.currentHp,
         remainingMana: u.currentMana,
+        maxHp: u.maxHp,
+        maxMana: u.maxMana,
       });
     }
 
@@ -393,6 +395,7 @@ export class CombatSimulator {
           targetId: currentTarget ? currentTarget.id : undefined,
           abilityName: def?.ability.name || 'Ability',
           remainingMana: 0,
+          maxMana: unit.maxMana,
         });
         continue;
       }
@@ -459,6 +462,8 @@ export class CombatSimulator {
             targetId: unit.id,
             value: healAmt,
             remainingHp: unit.currentHp,
+            maxHp: unit.maxHp,
+            maxMana: unit.maxMana,
           });
         }
       }
@@ -480,6 +485,8 @@ export class CombatSimulator {
           targetId: unit.id,
           value: healAmt,
           remainingHp: unit.currentHp,
+          maxHp: unit.maxHp,
+          maxMana: unit.maxMana,
         });
       }
     }
@@ -534,13 +541,6 @@ export class CombatSimulator {
     const mitigation = 100 / (100 + effectiveArmor);
     const finalDamage = Math.max(1, Math.round(rawDmg * mitigation));
 
-    this.events.push({
-      tick: this.currentTick,
-      type: 'ATTACK_START',
-      sourceId: attacker.id,
-      targetId: target.id,
-    });
-
     // Innate Role Mana Gain on basic attack:
     // - Tanks gain +5 mana per attack
     // - Fighters, Casters, Marksmen, Assassins gain +10 mana per attack
@@ -552,6 +552,15 @@ export class CombatSimulator {
       manaGain += 10;
     }
     attacker.currentMana = Math.min(attacker.maxMana, attacker.currentMana + manaGain);
+
+    this.events.push({
+      tick: this.currentTick,
+      type: 'ATTACK_START',
+      sourceId: attacker.id,
+      targetId: target.id,
+      remainingMana: attacker.currentMana,
+      maxMana: attacker.maxMana,
+    });
 
     // Duelist class stacking attack speed with max stacks
     if (attackerDef?.classes.includes('Duelist')) {
@@ -1207,6 +1216,8 @@ export class CombatSimulator {
       remainingHp: target.currentHp,
       remainingShield: target.shield,
       remainingMana: target.currentMana,
+      maxHp: target.maxHp,
+      maxMana: target.maxMana,
     });
 
     // Hogwarts Castle Bastion Armor reflection
@@ -1221,6 +1232,8 @@ export class CombatSimulator {
         value: reflectDmg,
         damageType: 'magic',
         remainingHp: attacker.currentHp,
+        maxHp: attacker.maxHp,
+        maxMana: attacker.maxMana,
       });
       if (attacker.currentHp <= 0) {
         this.killUnit(attacker);

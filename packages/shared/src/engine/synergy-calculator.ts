@@ -70,11 +70,16 @@ export function calculateSynergies(board: (BoardUnit | null)[][]): ActiveTraitIn
       traitId: traitDef.id,
       name: traitDef.name,
       type: traitDef.type,
+      icon: traitDef.icon,
       count,
       activeTier,
       totalTiers: traitDef.breakpoints.length,
       currentBreakpointDescription: currentDesc,
       nextBreakpointCount: nextCount,
+      breakpoints: traitDef.breakpoints.map((b) => ({
+        count: b.count,
+        description: b.description,
+      })),
     });
   }
 

@@ -7,7 +7,7 @@
     "dev": "tsx watch src/server.ts",
     "build": "tsc",
     "start": "node dist/server.js",
-    "test": "node --import tsx/esm --test test/**/*.test.ts"
+    "test": "npx tsx --test test/room.test.ts"
   },
   "dependencies": {
     "@autobattler/shared": "*",

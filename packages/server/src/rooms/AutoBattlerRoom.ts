@@ -19,6 +19,7 @@ import {
   XP_COST,
   XP_GAIN,
   checkAndCombineUnits,
+  TRAITS,
 } from "@autobattler/shared";
 import { BotController } from "../bot/BotController.js";
 
@@ -86,6 +87,13 @@ export class AutoBattlerRoom {
         false,
       );
       this.state.playerOrder.push(playerId);
+      this.state.players[playerId].shopUnits = this.pool.drawShop(this.state.players[playerId].level || 1, 5);
+    }
+
+    if (this.state.phase === "LOBBY") {
+      this.startGame();
+    } else if (this.state.phase === "GAME_OVER") {
+      this.restartGame();
     }
 
     this.sendStateTo(playerId);
@@ -124,6 +132,76 @@ export class AutoBattlerRoom {
       }
       botIndex++;
     }
+  }
+
+  
+  public restartGame(): void {
+    if (this.timerInterval) clearInterval(this.timerInterval);
+
+    // Re-initialize champion pool
+    this.pool = new UnitPool();
+
+    // Reset human players
+    const humanPlayers: Record<string, PlayerState> = {};
+    for (const [id, p] of Object.entries(this.state.players)) {
+      if (!p.isBot) {
+        humanPlayers[id] = this.createPlayerState(id, p.name, false);
+      }
+    }
+
+    this.state.players = humanPlayers;
+    this.state.playerOrder = Object.keys(humanPlayers);
+    this.state.winnerId = null;
+    this.eliminatedCount = 0;
+
+    // Fill with bots and start
+    this.fillWithBots(8);
+    this.state.phase = "PLANNING";
+    this.state.round = 1;
+    this.state.stage = 1;
+    this.state.roundInStage = 1;
+    this.state.isPveRound = true;
+    const initialPlanningDuration = 6;
+    this.state.phaseTimeRemaining = initialPlanningDuration;
+    this.state.phaseDuration = initialPlanningDuration;
+
+    const starting1Costs = Object.values(UNITS).filter(
+      (u) =>
+        u.cost === 1 &&
+        !["cornish_pixie", "garden_gnome", "acromantula_hatchling"].includes(
+          u.id,
+        ),
+    );
+
+    for (const p of Object.values(this.state.players)) {
+      p.gold = 0;
+      p.level = 1;
+      p.xp = 0;
+      p.health = 100;
+      p.isEliminated = false;
+      p.placement = 0;
+      p.shopUnits = this.pool.drawShop(p.level, 5);
+
+      const randomDef =
+        starting1Costs[Math.floor(Math.random() * starting1Costs.length)] ||
+        starting1Costs[0];
+      const startUnit: BoardUnit = {
+        id: `unit_${p.id}_init_${Math.random().toString(36).substring(2, 6)}`,
+        unitId: randomDef.id,
+        starLevel: 1,
+        position: { x: 0, y: 0 },
+        items: [],
+        currentHp: randomDef.stats.hp[0],
+        maxHp: randomDef.stats.hp[0],
+        currentMana: randomDef.stats.startingMana,
+        maxMana: randomDef.stats.maxMana,
+      };
+      p.bench[0] = startUnit;
+    }
+
+    this.updateLeaderboardOrder();
+    this.broadcastState();
+    this.startLoop();
   }
 
   public startGame(): void {
@@ -172,6 +250,7 @@ export class AutoBattlerRoom {
 
       p.bench[0] = startUnit;
       p.activeTraits = calculateSynergies(p.board);
+      this.recalculatePlayerUnitStats(p);
     }
 
     this.broadcastState();
@@ -284,6 +363,7 @@ export class AutoBattlerRoom {
     }
 
     player.activeTraits = calculateSynergies(player.board);
+        this.recalculatePlayerUnitStats(player);
   }
 
   private isCurrentRoundPve(): boolean {
@@ -901,13 +981,13 @@ export class AutoBattlerRoom {
     this.state.isPveRound = this.isCurrentRoundPve();
     this.state.isChoiceRound = this.isCurrentRoundChoice();
 
-    // Prep time duration: Choice round (X-4) is 45s, Round 1-1 is 6s, Stage 1 creeps are 18s, Stage 2+ is 30s
+    // Prep time duration: Choice round (X-4) is 45s, Round 1-1 is 6s, Stage 1 creeps are 12s, Stage 2+ is 30s
     const planningDuration = this.state.isChoiceRound
       ? 45
       : this.state.stage === 1
       ? this.state.roundInStage === 1
         ? 6
-        : 18
+        : 12
       : PLANNING_DURATION;
 
     this.state.phaseTimeRemaining = planningDuration;
@@ -951,15 +1031,19 @@ export class AutoBattlerRoom {
   }
 
   public handleAction(playerId: string, action: ClientAction): void {
-    const player = this.state.players[playerId];
-    if (!player || player.isEliminated) return;
-
-    if (action.type === "START_GAME") {
+    if (action.type === "START_GAME" || (action as any).type === "PLAY_AGAIN" || (action as any).type === "RESTART_GAME") {
       if (this.state.phase === "LOBBY") {
         this.startGame();
+      } else {
+        this.restartGame();
       }
       return;
     }
+
+    const player = this.state.players[playerId];
+    if (!player) return;
+
+    if (player.isEliminated) return;
 
     // Armory choices can be made in PLANNING
     if (action.type === "CHOOSE_ARMORY_COMPONENT") {
@@ -1041,6 +1125,8 @@ export class AutoBattlerRoom {
         // If in COMBAT, only combine units on bench (don't disturb combat units)
         const isBenchOnly = this.state.phase === "COMBAT";
         checkAndCombineUnits(player, isBenchOnly);
+        player.activeTraits = calculateSynergies(player.board);
+        this.recalculatePlayerUnitStats(player);
         break;
       }
 
@@ -1081,6 +1167,7 @@ export class AutoBattlerRoom {
 
         this.pool.returnToPool(unit.unitId, unit.starLevel);
         player.activeTraits = calculateSynergies(player.board);
+        this.recalculatePlayerUnitStats(player);
         break;
       }
 
@@ -1130,6 +1217,7 @@ export class AutoBattlerRoom {
         }
 
         player.activeTraits = calculateSynergies(player.board);
+        this.recalculatePlayerUnitStats(player);
         break;
       }
 
@@ -1215,17 +1303,17 @@ export class AutoBattlerRoom {
 
         if (!targetUnit) return;
 
-        if (
-          targetUnit.items.length === 1 &&
-          BASE_ITEMS[targetUnit.items[0] as BaseItemId] &&
-          BASE_ITEMS[itemKey as BaseItemId]
-        ) {
-          const combined = combineItems(targetUnit.items[0], itemKey);
-          if (combined) {
-            targetUnit.items = [combined.id];
-            player.itemBench[action.itemSlot] = null;
-            player.activeTraits = calculateSynergies(player.board);
-            break;
+        if (BASE_ITEMS[itemKey as BaseItemId]) {
+          const compIdx = targetUnit.items.findIndex(it => BASE_ITEMS[it as BaseItemId]);
+          if (compIdx !== -1) {
+            const combined = combineItems(targetUnit.items[compIdx], itemKey);
+            if (combined) {
+              targetUnit.items[compIdx] = combined.id;
+              player.itemBench[action.itemSlot] = null;
+              player.activeTraits = calculateSynergies(player.board);
+        this.recalculatePlayerUnitStats(player);
+              break;
+            }
           }
         }
 
@@ -1233,6 +1321,7 @@ export class AutoBattlerRoom {
           targetUnit.items.push(itemKey);
           player.itemBench[action.itemSlot] = null;
           player.activeTraits = calculateSynergies(player.board);
+        this.recalculatePlayerUnitStats(player);
         }
         break;
       }
@@ -1277,6 +1366,94 @@ export class AutoBattlerRoom {
 
     this.updateLeaderboardOrder();
     this.broadcastState();
+  }
+
+
+  private recalculatePlayerUnitStats(player: PlayerState): void {
+    const traits = player.activeTraits || [];
+
+    // Recalculate 4x8 Board Units
+    for (let r = 0; r < 4; r++) {
+      for (let c = 0; c < 8; c++) {
+        const u = player.board[r][c];
+        if (!u) continue;
+        const def = UNITS[u.unitId];
+        if (!def) continue;
+
+        const starIdx = Math.max(0, u.starLevel - 1);
+        let hp = def.stats.hp[starIdx];
+        let armor = def.stats.armor;
+        let magicResist = def.stats.magicResist;
+
+        // Apply Items
+        for (const itemId of u.items) {
+          const itm = ALL_ITEMS[itemId];
+          if (!itm) continue;
+          const isSignature = Boolean(itm.signatureUnits && itm.signatureUnits.includes(def.id));
+          const mult = isSignature ? 1.1 : 1.0;
+
+          if (itm.stats.hp) hp += Math.round(itm.stats.hp * mult);
+          if (itm.stats.armor) armor += Math.round(itm.stats.armor * mult);
+          if (itm.stats.magicResist) magicResist += Math.round(itm.stats.magicResist * mult);
+        }
+
+        // Apply Trait synergies
+        for (const t of traits) {
+          if (t.activeTier <= 0) continue;
+          const traitDef = TRAITS[t.traitId];
+          if (!traitDef) continue;
+          const bp = traitDef.breakpoints[t.activeTier - 1];
+          if (!bp) continue;
+
+          // Global ally bonuses
+          if (bp.bonus.armor) armor += bp.bonus.armor;
+          if (bp.bonus.magicResist) magicResist += bp.bonus.magicResist;
+
+          // Class/Origin specific bonuses
+          if (def.origins.includes(t.traitId as any) || def.classes.includes(t.traitId as any)) {
+            if (bp.bonus.health) hp += bp.bonus.health;
+          }
+        }
+
+        u.maxHp = hp;
+        u.effectiveArmor = armor;
+        u.effectiveMagicResist = magicResist;
+        if (this.state.phase === "PLANNING" || this.state.phase === "LOBBY") {
+          u.currentHp = hp;
+        } else {
+          u.currentHp = Math.min(u.currentHp, hp);
+        }
+      }
+    }
+
+    // Also recalculate 9-Slot Bench Units (Base stats + Items)
+    for (let i = 0; i < 9; i++) {
+      const u = player.bench[i];
+      if (!u) continue;
+      const def = UNITS[u.unitId];
+      if (!def) continue;
+
+      const starIdx = Math.max(0, u.starLevel - 1);
+      let hp = def.stats.hp[starIdx];
+      let armor = def.stats.armor;
+      let magicResist = def.stats.magicResist;
+
+      for (const itemId of u.items) {
+        const itm = ALL_ITEMS[itemId];
+        if (!itm) continue;
+        const isSignature = Boolean(itm.signatureUnits && itm.signatureUnits.includes(def.id));
+        const mult = isSignature ? 1.1 : 1.0;
+
+        if (itm.stats.hp) hp += Math.round(itm.stats.hp * mult);
+        if (itm.stats.armor) armor += Math.round(itm.stats.armor * mult);
+        if (itm.stats.magicResist) magicResist += Math.round(itm.stats.magicResist * mult);
+      }
+
+      u.maxHp = hp;
+      u.effectiveArmor = armor;
+      u.effectiveMagicResist = magicResist;
+      u.currentHp = hp;
+    }
   }
 
   private getBoardUnits(player: PlayerState): BoardUnit[] {

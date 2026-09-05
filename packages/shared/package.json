@@ -14,7 +14,7 @@
   },
   "scripts": {
     "build": "tsc",
-    "test": "node --import tsx/esm --test test/**/*.test.ts"
+    "test": "npx tsx --test test/combat.test.ts test/combine.test.ts test/dynamic_trait_bonuses.test.ts test/economy.test.ts test/items.test.ts test/pool.test.ts test/trios_and_families.test.ts"
   },
   "dependencies": {},
   "devDependencies": {

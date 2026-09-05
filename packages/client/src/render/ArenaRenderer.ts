@@ -918,9 +918,9 @@ export class ArenaRenderer {
       const starLevel = ev.starLevel || 1;
       const def = UNITS[unitDefId];
 
-      const maxHp = ev.value || def?.stats.hp[starLevel - 1] || 800;
+      const maxHp = ev.maxHp !== undefined ? ev.maxHp : (ev.value || def?.stats.hp[starLevel - 1] || 800);
       const startingMana = ev.remainingMana !== undefined ? ev.remainingMana : (def?.stats.startingMana || 0);
-      const maxMana = def?.stats.maxMana || 100;
+      const maxMana = ev.maxMana !== undefined ? ev.maxMana : (def?.stats.maxMana || 100);
 
       const mockUnit: BoardUnit = {
         id: ev.sourceId,
@@ -935,6 +935,25 @@ export class ArenaRenderer {
       };
 
       this.createUnitSprite(mockUnit, ev.toPos.x, ev.toPos.y, isAway ? 'away' : 'home');
+    } else if (ev.type === 'ATTACK_START' && ev.sourceId) {
+      const vis = this.unitVisuals.get(ev.sourceId);
+      if (vis && ev.remainingMana !== undefined) {
+        vis.currentMana = ev.remainingMana;
+        if (ev.maxMana !== undefined) vis.maxMana = ev.maxMana;
+        const radius = this.hexRadius * 0.72;
+        this.updateManaBar(vis.manaGraphic, vis.currentMana, vis.maxMana, radius);
+
+        if (this.inspectedUnitId === ev.sourceId && this.onUnitInspectUpdate) {
+          this.onUnitInspectUpdate({
+            id: ev.sourceId,
+            currentHp: Math.max(0, vis.currentHp),
+            maxHp: vis.maxHp,
+            currentShield: vis.currentShield,
+            currentMana: Math.max(0, vis.currentMana),
+            maxMana: vis.maxMana,
+          });
+        }
+      }
     } else if (ev.type === 'MOVE' && ev.sourceId && ev.toPos) {
       const vis = this.unitVisuals.get(ev.sourceId);
       if (vis) {

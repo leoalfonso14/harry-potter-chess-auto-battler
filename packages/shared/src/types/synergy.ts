@@ -65,13 +65,21 @@ export interface TraitDefinition {
   breakpoints: TraitBreakpoint[];
 }
 
+export interface ActiveTraitBreakpointInfo {
+  count: number;
+  description: string;
+}
+
 export interface ActiveTraitInfo {
   traitId: string;
   name: string;
   type: 'origin' | 'class';
+  icon?: string;
   count: number;
   activeTier: number; // 0 if below first breakpoint, 1 for first, etc.
   totalTiers: number;
   currentBreakpointDescription: string;
   nextBreakpointCount: number | null;
+  breakpoints?: ActiveTraitBreakpointInfo[];
 }
+

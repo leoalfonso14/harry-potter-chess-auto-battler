@@ -103,6 +103,8 @@ export interface CombatEvent {
   remainingHp?: number;
   remainingShield?: number;
   remainingMana?: number;
+  maxHp?: number;
+  maxMana?: number;
   meta?: Record<string, unknown>;
 }
 
